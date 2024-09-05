@@ -5,7 +5,7 @@
 	"scripts": {
 		"dev": "redis-server --daemonize yes && next dev --turbo",
 		"build": "next build",
-		"start": "redis-server --daemonize yes && next start",
+		"start": "next start",
 		"lint": "eslint . --ext .ts,.tsx -c .eslintrc.json --fix"
 	},
 	"dependencies": {
