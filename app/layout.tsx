@@ -1,13 +1,11 @@
 import "@/styles/globals.css";
 import { Metadata, Viewport } from "next";
-import { Link } from "@nextui-org/link";
 import clsx from "clsx";
 
 import { Providers } from "./providers";
 
 import { siteConfig } from "@/config/site";
 import { fontSans } from "@/config/fonts";
-import { Navbar } from "@/components/navbar";
 
 export const metadata: Metadata = {
   title: {
@@ -41,9 +39,7 @@ export default function RootLayout({
           fontSans.variable,
         )}
       >
-        <Providers themeProps={{ attribute: "class", defaultTheme: "dark" }}>
-          {children}
-        </Providers>
+        <Providers themeProps={{ attribute: "class" }}>{children}</Providers>
       </body>
     </html>
   );

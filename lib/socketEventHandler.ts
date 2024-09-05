@@ -1,0 +1,64 @@
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+
+import { isPayloadOfType } from "./isPayloadOfType";
+
+import { Message, MessageType, TypedMessage } from "@/app/api/route";
+
+type Handler<T extends MessageType> = {
+  type: T;
+  handler: (message: TypedMessage<T>) => void;
+};
+
+type Handlers<T extends MessageType[]> = { [K in keyof T]: Handler<T[K]> };
+
+export function createSocketEventHandler<T extends MessageType[]>(
+  socket: WebSocket | null,
+  router: AppRouterInstance,
+  ...handlers: Handlers<T>
+) {
+  if (socket === null) {
+    return;
+  }
+
+  async function onMessage(event: MessageEvent) {
+    const payload =
+      typeof event.data === "string" ? event.data : await event.data.text();
+
+    const message = JSON.parse(payload);
+
+    if (isPayloadOfType(message, "partnerLeft")) {
+      router.push("/?left");
+    }
+
+    for (const handler of handlers) {
+      if (isPayloadOfType(message, handler.type)) {
+        handler.handler(message);
+      }
+    }
+  }
+
+  socket.removeEventListener("message", onMessage);
+  socket.addEventListener("message", onMessage);
+
+  const keepOpenSocketInterval = setInterval(() => {
+    if (
+      socket.readyState === WebSocket.CLOSED ||
+      socket.readyState === WebSocket.CLOSING
+    ) {
+      Object.assign(socket, new WebSocket(socket.url));
+      socket.addEventListener("open", () => {
+        socket.send(
+          JSON.stringify({
+            type: "setId",
+            data: { id: localStorage.getItem("id") ?? undefined },
+          } satisfies Message),
+        );
+      });
+    }
+  }, 500);
+
+  return () => {
+    socket.removeEventListener("message", onMessage);
+    clearInterval(keepOpenSocketInterval);
+  };
+}
