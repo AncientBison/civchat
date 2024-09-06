@@ -67,6 +67,7 @@ export default function InnerChatPage() {
   const [textMessages, setTextMessages] = useState<TextMessage[]>([]);
   const [inputTextMessage, setInputTextMessage] = useState<string>("");
   const [partnerTyping, setPartnerTyping] = useState<boolean>(false);
+  const [typing, setTyping] = useState<boolean>(false);
   const textMessageEndRef = useRef<HTMLDivElement | null>(null);
 
   const handleSend = (): void => {
@@ -85,16 +86,11 @@ export default function InnerChatPage() {
         },
       });
 
-      sendSocketMessage(socket!, {
-        type: "startTyping",
-        data: {
-          typing: false,
-        },
-      });
+      setTyping(false);
     }
   };
 
-  const createMemoizedSocketEventHandler = useMemo(
+  const createMemoizedSocketEventHandlerCleanup = useMemo(
     () =>
       createSocketEventHandler(
         socket!,
@@ -125,7 +121,7 @@ export default function InnerChatPage() {
     [],
   );
 
-  useEffect(createMemoizedSocketEventHandler ?? (() => {}), [socket]);
+  useEffect(() => {return createMemoizedSocketEventHandlerCleanup!}, []);
 
   const scrollToBottom = (): void => {
     textMessageEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -134,6 +130,15 @@ export default function InnerChatPage() {
   useEffect(() => {
     scrollToBottom();
   }, [textMessages]);
+
+  useEffect(() => {
+    sendSocketMessage(socket!, {
+      type: "startTyping",
+      data: {
+        typing,
+      },
+    });
+  }, [ typing ]);
 
   return questionAndOpinions === null ? (
     <FullSpinner />
@@ -184,12 +189,7 @@ export default function InnerChatPage() {
                 placeholder="Type a message..."
                 value={inputTextMessage}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  sendSocketMessage(socket!, {
-                    type: "startTyping",
-                    data: {
-                      typing: true,
-                    },
-                  });
+                  setTyping(true);
                   setInputTextMessage(e.target.value);
                 }}
                 onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) =>

@@ -69,7 +69,7 @@ export default function Home() {
     onOpen: aboutDialogOnOpen,
   } = useDisclosure();
 
-  const createMemoizedSocketEventHandler = useMemo(
+  const createMemoizedSocketEventHandlerCleanup = useMemo(
     () =>
       createSocketEventHandler(
         socket!,
@@ -114,7 +114,7 @@ export default function Home() {
     [],
   );
 
-  useEffect(createMemoizedSocketEventHandler ?? (() => {}), [socket]);
+  useEffect(() => {return createMemoizedSocketEventHandlerCleanup!}, []);
 
   useEffect(() => {
     sendSocketMessage(socket!, {

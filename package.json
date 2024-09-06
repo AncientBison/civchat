@@ -3,9 +3,9 @@
 	"version": "0.0.1",
 	"private": true,
 	"scripts": {
-		"dev": "redis-server --daemonize yes && next dev --turbo",
+		"dev": "npx next-ws-cli@latest patch && next dev --turbo",
 		"build": "npx next-ws-cli@latest patch && next build",
-		"start": "next start",
+		"start": "npx next-ws-cli@latest patch && next start",
 		"lint": "eslint . --ext .ts,.tsx -c .eslintrc.json --fix"
 	},
 	"dependencies": {
@@ -28,12 +28,14 @@
 		"@nextui-org/theme": "2.2.9",
 		"@react-aria/ssr": "3.9.4",
 		"@react-aria/visually-hidden": "3.8.12",
+		"@types/ws": "^8.5.12",
 		"clsx": "2.1.1",
 		"framer-motion": "~11.1.1",
 		"intl-messageformat": "^10.5.0",
 		"next": "14.2.4",
 		"next-themes": "^0.2.1",
 		"next-ws": "^1.1.1",
+		"prettier": "^3.3.3",
 		"react": "18.3.1",
 		"react-dom": "18.3.1",
 		"redis": "^4.7.0",
@@ -43,7 +45,6 @@
 		"@types/node": "20.5.7",
 		"@types/react": "18.3.3",
 		"@types/react-dom": "18.3.0",
-		"@types/ws": "^8.5.12",
 		"@typescript-eslint/eslint-plugin": "7.2.0",
 		"@typescript-eslint/parser": "7.2.0",
 		"autoprefixer": "10.4.19",
@@ -57,13 +58,9 @@
 		"eslint-plugin-react": "^7.23.2",
 		"eslint-plugin-react-hooks": "^4.6.0",
 		"eslint-plugin-unused-imports": "^3.2.0",
-		"next-ws-cli": "^1.1.1",
 		"postcss": "8.4.38",
-		"tailwind-variants": "0.1.20",
+		"tailwind-variants": "^0.2.1",
 		"tailwindcss": "3.4.3",
 		"typescript": "5.0.4"
-	},
-	"engines": {
-		"node": ">=20.0.0"
 	}
 }
