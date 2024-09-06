@@ -62,7 +62,7 @@ export default function Home() {
   const searchParams = useSearchParams();
   const [waitingForPartner, setWaitingForPartner] = useState(false);
   const [condition, setCondition] = useState<Condition | null>(null);
-  const [idSet, setIdSet] = useState<boolean>();
+  const [idSet, setIdSet] = useState<boolean>(false);
   const {
     isOpen: aboutDialogIsOpen,
     onOpenChange: aboutDialogOnOpenChange,
