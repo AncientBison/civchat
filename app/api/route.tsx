@@ -527,9 +527,7 @@ export function SOCKET(
         await startTyping(payload.data.typing);
         break;
       default:
-        if (process.env.NODE_ENV === "development") {
-          console.warn("Unknown message type:", payload.type);
-        }
+        console.warn("Unknown message type:", payload.type);
     }
   });
 

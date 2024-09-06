@@ -26,9 +26,7 @@ export function createSocketEventHandler<T extends MessageType[]>(
 
     const message = JSON.parse(payload);
 
-    if (process.env.NODE_ENV === "development") {
-      console.log("Message recived", message);
-    }
+    console.log("Message recived", message);
 
     if (isPayloadOfType(message, "partnerLeft")) {
       router.push("/?left");
