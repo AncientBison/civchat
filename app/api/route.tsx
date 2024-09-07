@@ -5,6 +5,7 @@ import { WebSocketServer, WebSocket } from "ws";
 
 import { getClient } from "@/lib/redis";
 import { Question } from "@/lib/question";
+import { logger } from "@/lib/pino";
 
 function getClientFromUUid(uuid: string, server: WebSocketServer) {
   return Array.from(server.clients).find(
@@ -117,7 +118,9 @@ export type MessageType =
   | "setId"
   | "setIdResult"
   | "noId"
-  | "startTyping";
+  | "startTyping"
+  | "ping"
+  | "pong";
 
 type BaseMessageWithoutData<T extends MessageType> = {
   type: T;
@@ -200,6 +203,10 @@ type StartTypingMessage = BaseMessage<
   }
 >;
 
+type PingMessage = BaseMessage<"ping">;
+
+type PongMessage = BaseMessage<"pong">;
+
 export type Message =
   | AddToRoomMessage
   | OpinionMessage
@@ -213,7 +220,9 @@ export type Message =
   | SetIdMessage
   | SetIdResultMessage
   | NoIdMessage
-  | StartTypingMessage;
+  | StartTypingMessage
+  | PingMessage
+  | PongMessage;
 
 export type TypedMessage<T extends MessageType> = T extends "addToRoom"
   ? AddToRoomMessage
@@ -241,7 +250,11 @@ export type TypedMessage<T extends MessageType> = T extends "addToRoom"
                         ? NoIdMessage
                         : T extends "startTyping"
                           ? StartTypingMessage
-                          : never;
+                          : T extends "ping"
+                            ? PingMessage
+                            : T extends "pong"
+                              ? PongMessage
+                              : never;
 
 export type Opinion =
   | "stronglyDisagree"
@@ -298,6 +311,7 @@ export function SOCKET(
     }
 
     client.uuid = id;
+    logger.info("Socket id assigned: ", id);
   }
 
   async function opinion(opinion: Opinion) {
@@ -510,6 +524,12 @@ export function SOCKET(
       return;
     }
 
+    async function pong() {
+      client.send(JSON.stringify({
+        type: "pong"
+      } satisfies Message));
+    }
+
     switch (payload.type) {
       case "addToQueue":
         await addToQueue();
@@ -526,6 +546,9 @@ export function SOCKET(
       case "startTyping":
         await startTyping(payload.data.typing);
         break;
+      case "ping":
+        await pong();
+        break;
       default:
         if (process.env.NODE_ENV === "development") {
           console.warn("Unknown message type:", payload.type);
@@ -534,6 +557,7 @@ export function SOCKET(
   });
 
   client.on("close", async () => {
+    logger.info("Socket closed: ", client.uuid);
     const redis = await getClient();
 
     if (partners !== undefined && (await partners.has(id))) {
