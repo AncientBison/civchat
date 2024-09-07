@@ -84,7 +84,7 @@ const SurveyCard = () => {
     setWaitingForPartner(true);
   }
 
-  const createMemoizedSocketEventHandler = useMemo(
+  const createMemoizedSocketEventHandlerCleanup = useMemo(
     () =>
       createSocketEventHandler(
         socket!,
@@ -117,7 +117,7 @@ const SurveyCard = () => {
     [],
   );
 
-  useEffect(createMemoizedSocketEventHandler ?? (() => {}), [socket]);
+  useEffect(() => {return createMemoizedSocketEventHandlerCleanup!}, []);
 
   return waitingForPartner ? (
     <Spinner label="Waiting for other person to answer..." />
