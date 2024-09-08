@@ -61,8 +61,13 @@ export function createSocketEventHandler<T extends MessageType[]>(
     }
   }, 500);
 
+  const pingInterval = setInterval(() => {
+    socket.send(JSON.stringify({ type: "ping" } satisfies Message));
+  }, 1000);
+
   return () => {
     socket.removeEventListener("message", onMessage);
+    clearInterval(pingInterval);
     clearInterval(keepOpenSocketInterval);
   };
 }
