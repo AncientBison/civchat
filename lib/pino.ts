@@ -1,11 +1,11 @@
-import pino, { Logger } from 'pino';
+import pino, { Logger } from "pino";
 
 export const logger: Logger = pino({
   transport: {
-    target: 'pino-pretty',
+    target: "pino-pretty",
     options: {
       colorize: true,
     },
   },
-  level: process.env.PINO_LOG_LEVEL || 'info',
+  level: process.env.PINO_LOG_LEVEL || "info",
 });

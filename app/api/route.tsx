@@ -9,7 +9,7 @@ import { logger } from "@/lib/pino";
 
 function getClientFromUUid(uuid: string, server: WebSocketServer) {
   return Array.from(server.clients).find(
-    (client) => (client as WebSocketWithUuid).uuid === uuid,
+    (client) => (client as WebSocketWithUuid).uuid === uuid
   );
 }
 
@@ -45,14 +45,14 @@ class Partners {
 
   public async assignRandomQuestion(
     id: string,
-    partnerId: string,
+    partnerId: string
   ): Promise<Question> {
     const questionId = Math.floor(Math.random() * Question.count);
 
     await this.redis.hSet(
       Partners.createPartnersId(id, partnerId),
       "id",
-      questionId,
+      questionId
     );
 
     return new Question(questionId);
@@ -60,11 +60,11 @@ class Partners {
 
   public async getQuestion(
     id: string,
-    partnerId: string,
+    partnerId: string
   ): Promise<Question | undefined> {
     const questionId = await this.redis.hGet(
       Partners.createPartnersId(id, partnerId),
-      "id",
+      "id"
     );
 
     return questionId === undefined
@@ -76,21 +76,21 @@ class Partners {
     await this.redis.hSet(
       Partners.createPartnersId(id, partnerId),
       `answer:${id}`,
-      answer,
+      answer
     );
   }
 
   public async getQuestionAnswers(
     id: string,
-    partnerId: string,
+    partnerId: string
   ): Promise<{ [key: string]: Opinion } | undefined> {
     const selfAnswer = await this.redis.hGet(
       Partners.createPartnersId(id, partnerId),
-      `answer:${id}`,
+      `answer:${id}`
     );
     const partnerAnswer = await this.redis.hGet(
       Partners.createPartnersId(id, partnerId),
-      `answer:${partnerId}`,
+      `answer:${partnerId}`
     );
 
     if (selfAnswer === undefined || partnerAnswer === undefined) {
@@ -270,10 +270,19 @@ interface WebSocketWithUuid extends WebSocket {
 export function SOCKET(
   client: WebSocketWithUuid,
   request: IncomingMessage,
-  server: WebSocketServer,
+  server: WebSocketServer
 ) {
   let id: string = "";
   let partners: Partners;
+
+  let timeOfLastPong = new Date();
+
+  const ensureConnectionInterval = setInterval(() => {
+    if (Date.now() - timeOfLastPong.getTime() > 10 * 1000) {
+      logger.warn("Client disconnected unexpectedly: " + id);
+      client.close();
+    }
+  }, 1000);
 
   async function setId(idToSet?: string) {
     if (idToSet === undefined) {
@@ -285,7 +294,7 @@ export function SOCKET(
             message: "generatedId",
             id,
           },
-        } satisfies Message),
+        } satisfies Message)
       );
     } else if (getClientFromUUid(idToSet, server) !== undefined) {
       client.send(
@@ -295,7 +304,7 @@ export function SOCKET(
             message: "idTaken",
             id,
           },
-        } satisfies Message),
+        } satisfies Message)
       );
     } else {
       id = idToSet;
@@ -306,12 +315,12 @@ export function SOCKET(
             message: "setId",
             id,
           },
-        } satisfies Message),
+        } satisfies Message)
       );
     }
 
     client.uuid = id;
-    logger.info("Socket id assigned: ", id);
+    logger.info("Socket id assigned: " + id);
   }
 
   async function opinion(opinion: Opinion) {
@@ -359,7 +368,7 @@ export function SOCKET(
               opinion: partnerOpinion,
               questionId: question.id,
             },
-          } satisfies Message),
+          } satisfies Message)
         );
         client.send(
           JSON.stringify({
@@ -369,7 +378,7 @@ export function SOCKET(
               opinion,
               questionId: question.id,
             },
-          } satisfies Message),
+          } satisfies Message)
         );
       } else {
         const messageStringified = JSON.stringify({
@@ -409,7 +418,7 @@ export function SOCKET(
             id,
             questionId: question.id,
           },
-        } satisfies Message),
+        } satisfies Message)
       );
 
       client?.send(
@@ -419,7 +428,7 @@ export function SOCKET(
             id: partnerId,
             questionId: question.id,
           },
-        } satisfies Message),
+        } satisfies Message)
       );
     }
   }
@@ -441,7 +450,7 @@ export function SOCKET(
       JSON.stringify({
         type: "textMessage",
         data: { text },
-      } satisfies Message),
+      } satisfies Message)
     );
   }
 
@@ -460,7 +469,7 @@ export function SOCKET(
     partner.send(
       JSON.stringify({
         type: "endChat",
-      } satisfies Message),
+      } satisfies Message)
     );
 
     await partners.seperatePartners(id, partnerId);
@@ -483,7 +492,7 @@ export function SOCKET(
       JSON.stringify({
         type: "startTyping",
         data: { typing },
-      } satisfies Message),
+      } satisfies Message)
     );
   }
 
@@ -507,7 +516,7 @@ export function SOCKET(
               message: "idAlreadySet",
               id,
             },
-          } satisfies Message),
+          } satisfies Message)
         );
 
         return;
@@ -518,16 +527,19 @@ export function SOCKET(
       client.send(
         JSON.stringify({
           type: "noId",
-        } satisfies Message),
+        } satisfies Message)
       );
 
       return;
     }
 
     async function pong() {
-      client.send(JSON.stringify({
-        type: "pong"
-      } satisfies Message));
+      timeOfLastPong = new Date();
+      client.send(
+        JSON.stringify({
+          type: "pong",
+        } satisfies Message)
+      );
     }
 
     switch (payload.type) {
@@ -557,7 +569,9 @@ export function SOCKET(
   });
 
   client.on("close", async () => {
-    logger.info("Socket closed: ", client.uuid);
+    if (id !== undefined) {
+      logger.info("Socket closed: " + id);
+    }
     const redis = await getClient();
 
     if (partners !== undefined && (await partners.has(id))) {
@@ -570,5 +584,7 @@ export function SOCKET(
       await partners.seperatePartners(id, partnerId);
     }
     await redis.lRem("queue", 1, id);
+    
+    clearInterval(ensureConnectionInterval);
   });
 }
