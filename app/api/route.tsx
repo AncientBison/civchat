@@ -573,7 +573,7 @@ export function SOCKET(
   });
 
   client.on("close", async () => {
-    if (id !== undefined) {
+    if (id !== "") {
       logger.info("Socket closed: " + id);
     }
     const redis = await getClient();
