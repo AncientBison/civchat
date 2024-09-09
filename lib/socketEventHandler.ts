@@ -44,20 +44,28 @@ export function createSocketEventHandler<T extends MessageType[]>(
   socket.removeEventListener("message", onMessage);
   socket.addEventListener("message", onMessage);
 
+  let timeOfLastSocketCreation = new Date();
+
+  const createNewSocketConnection = () => {
+    timeOfLastSocketCreation = new Date();
+    Object.assign(socket, new WebSocket(socket.url));
+    socket.onopen = () => {
+      socket.send(
+        JSON.stringify({
+          type: "setId",
+          data: { id: localStorage.getItem("id") ?? undefined },
+        } satisfies Message),
+      );
+    };
+  };
+
   const keepOpenSocketInterval = setInterval(() => {
     if (
-      socket.readyState === WebSocket.CLOSED ||
-      socket.readyState === WebSocket.CLOSING
+      (socket.readyState === WebSocket.CLOSED ||
+        socket.readyState === WebSocket.CLOSING) &&
+      Date.now() - timeOfLastSocketCreation.getTime() > 20 * 1000
     ) {
-      Object.assign(socket, new WebSocket(socket.url));
-      socket.addEventListener("open", () => {
-        socket.send(
-          JSON.stringify({
-            type: "setId",
-            data: { id: localStorage.getItem("id") ?? undefined },
-          } satisfies Message),
-        );
-      });
+      createNewSocketConnection();
     }
   }, 500);
 

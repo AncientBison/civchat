@@ -1,4 +1,5 @@
 import { createClient } from "redis";
+import { logger } from "./pino";
 
 export async function getClient() {
   const client = await createClient({
@@ -6,7 +7,7 @@ export async function getClient() {
   })
     .on("error", (err) => () => {
       if (process.env.NODE_ENV === "development") {
-        console.error("Redis Client Error", err);
+        logger.error("Redis Client Error", err);
       }
     })
     .connect();
