@@ -275,14 +275,9 @@ export function SOCKET(
   let id: string = "";
   let partners: Partners;
 
-  let timeOfLastPong = new Date();
+  let timeOfLastPong = new Date(-1);
 
-  const ensureConnectionInterval = setInterval(() => {
-    if (Date.now() - timeOfLastPong.getTime() > 10 * 1000) {
-      logger.warn("Client disconnected unexpectedly: " + id);
-      client.close();
-    }
-  }, 1000);
+  let ensureConnectionInterval: NodeJS.Timeout;
 
   async function setId(idToSet?: string) {
     if (idToSet === undefined) {
@@ -321,6 +316,15 @@ export function SOCKET(
 
     client.uuid = id;
     logger.info("Socket id assigned: " + id);
+
+    timeOfLastPong = new Date();
+
+    ensureConnectionInterval = setInterval(() => {
+      if (Date.now() - timeOfLastPong.getTime() > 10 * 1000) {
+        logger.warn("Client disconnected unexpectedly: " + id);
+        client.close();
+      }
+    }, 1000);
   }
 
   async function opinion(opinion: Opinion) {
@@ -585,6 +589,8 @@ export function SOCKET(
     }
     await redis.lRem("queue", 1, id);
     
-    clearInterval(ensureConnectionInterval);
+    if (ensureConnectionInterval !== undefined) {
+      clearInterval(ensureConnectionInterval);
+    }
   });
 }
