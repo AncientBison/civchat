@@ -273,11 +273,11 @@ export function SOCKET(
   server: WebSocketServer,
 ) {
   let id: string = "";
-  let partners: Partners;
+  let partners: Partners | undefined;
 
-  let timeOfLastPong = new Date(-1);
+  let timeOfLastPong: Date = new Date(-1);
 
-  let ensureConnectionInterval: NodeJS.Timeout;
+  let ensureConnectionInterval: NodeJS.Timeout | undefined;
 
   async function setId(idToSet?: string) {
     if (idToSet === undefined) {
@@ -328,15 +328,15 @@ export function SOCKET(
   }
 
   async function opinion(opinion: Opinion) {
-    const partnerId = await partners.getPartnerId(id);
+    const partnerId = await partners!.getPartnerId(id);
 
     if (partnerId === undefined) {
       return;
     }
 
-    await partners.setAwnser(id, partnerId, opinion);
-    const answers = await partners.getQuestionAnswers(id, partnerId);
-    const question = await partners.getQuestion(id, partnerId);
+    await partners!.setAwnser(id, partnerId, opinion);
+    const answers = await partners!.getQuestionAnswers(id, partnerId);
+    const question = await partners!.getQuestion(id, partnerId);
 
     if (answers === undefined || question === undefined) {
       return;
@@ -395,7 +395,7 @@ export function SOCKET(
         partner?.send(messageStringified);
         client.send(messageStringified);
 
-        await partners.seperatePartners(id, partnerId);
+        await partners!.seperatePartners(id, partnerId);
       }
     }
   }
@@ -411,9 +411,9 @@ export function SOCKET(
     } else {
       const partner = getClientFromUUid(partnerId, server);
 
-      await partners.setPartners(id, partnerId);
+      await partners!.setPartners(id, partnerId);
 
-      const question = await partners.assignRandomQuestion(id, partnerId);
+      const question = await partners!.assignRandomQuestion(id, partnerId);
 
       partner?.send(
         JSON.stringify({
@@ -438,7 +438,7 @@ export function SOCKET(
   }
 
   async function textMessage(text: string) {
-    const partnerId = await partners.getPartnerId(id);
+    const partnerId = await partners!.getPartnerId(id);
 
     if (partnerId === undefined) {
       return;
@@ -459,7 +459,7 @@ export function SOCKET(
   }
 
   async function endChat() {
-    const partnerId = await partners.getPartnerId(id);
+    const partnerId = await partners!.getPartnerId(id);
 
     if (partnerId === undefined) {
       return;
@@ -476,11 +476,11 @@ export function SOCKET(
       } satisfies Message),
     );
 
-    await partners.seperatePartners(id, partnerId);
+    await partners!.seperatePartners(id, partnerId);
   }
 
   async function startTyping(typing: boolean) {
-    const partnerId = await partners.getPartnerId(id);
+    const partnerId = await partners!.getPartnerId(id);
 
     if (partnerId === undefined) {
       return;
@@ -598,5 +598,16 @@ export function SOCKET(
     if (ensureConnectionInterval !== undefined) {
       clearInterval(ensureConnectionInterval);
     }
+  });
+
+  client.on("open", () => {
+    id = "";
+    partners = undefined;
+  
+    timeOfLastPong = new Date(-1);
+  
+    ensureConnectionInterval = undefined;
+
+    
   });
 }
