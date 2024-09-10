@@ -500,7 +500,18 @@ export function SOCKET(
     );
   }
 
+  async function pong() {
+    timeOfLastPong = new Date();
+    client.send(
+      JSON.stringify({
+        type: "pong",
+      } satisfies Message),
+    );
+  }
+
   client.on("message", async (message) => {
+    logger.debug(`Recived message ${message.toString()} for ${id}`);
+
     if (partners === undefined) {
       partners = new Partners(await getClient());
     }
@@ -509,10 +520,12 @@ export function SOCKET(
 
     if (payload.type === "setId") {
       if (id === "") {
+        logger.debug("Setting id of new client");
         await setId(payload.data.id);
 
         return;
       } else {
+        logger.debug(`Id already set on setId request: ${id}`);
         client.send(
           JSON.stringify({
             type: "setIdResult",
@@ -528,6 +541,8 @@ export function SOCKET(
     }
 
     if (id === "") {
+      logger.debug("Client request without id");
+
       client.send(
         JSON.stringify({
           type: "noId",
@@ -535,15 +550,6 @@ export function SOCKET(
       );
 
       return;
-    }
-
-    async function pong() {
-      timeOfLastPong = new Date();
-      client.send(
-        JSON.stringify({
-          type: "pong",
-        } satisfies Message),
-      );
     }
 
     switch (payload.type) {
