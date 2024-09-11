@@ -114,7 +114,9 @@ export default function Home() {
     [],
   );
 
-  useEffect(() => {return createMemoizedSocketEventHandlerCleanup!}, []);
+  useEffect(() => {
+    return createMemoizedSocketEventHandlerCleanup!;
+  }, []);
 
   useEffect(() => {
     sendSocketMessage(socket!, {

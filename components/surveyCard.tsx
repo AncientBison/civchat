@@ -117,7 +117,9 @@ const SurveyCard = () => {
     [],
   );
 
-  useEffect(() => {return createMemoizedSocketEventHandlerCleanup!}, []);
+  useEffect(() => {
+    return createMemoizedSocketEventHandlerCleanup!;
+  }, []);
 
   return waitingForPartner ? (
     <Spinner label="Waiting for other person to answer..." />

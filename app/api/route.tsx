@@ -319,10 +319,12 @@ export function SOCKET(
 
     timeOfLastPong = new Date();
 
-    ensureConnectionInterval = setInterval(() => {
+    ensureConnectionInterval = setInterval(async () => {
       if (Date.now() - timeOfLastPong.getTime() > 10 * 1000) {
         logger.warn("Client disconnected unexpectedly: " + id);
         client.terminate();
+        await closeSocket();
+        client.removeAllListeners();
       }
     }, 1000);
   }
@@ -578,7 +580,7 @@ export function SOCKET(
     }
   });
 
-  client.on("close", async () => {
+  async function closeSocket() {
     if (id !== "") {
       logger.info("Socket closed: " + id);
     }
@@ -598,16 +600,16 @@ export function SOCKET(
     if (ensureConnectionInterval !== undefined) {
       clearInterval(ensureConnectionInterval);
     }
-  });
+  }
+
+  client.on("close", closeSocket);
 
   client.on("open", () => {
     id = "";
     partners = undefined;
-  
-    timeOfLastPong = new Date(-1);
-  
-    ensureConnectionInterval = undefined;
 
-    
+    timeOfLastPong = new Date(-1);
+
+    ensureConnectionInterval = undefined;
   });
 }

@@ -1,4 +1,5 @@
 import { createClient } from "redis";
+
 import { logger } from "./pino";
 
 export async function getClient() {

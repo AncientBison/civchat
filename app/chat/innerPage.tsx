@@ -121,7 +121,9 @@ export default function InnerChatPage() {
     [],
   );
 
-  useEffect(() => {return createMemoizedSocketEventHandlerCleanup!}, []);
+  useEffect(() => {
+    return createMemoizedSocketEventHandlerCleanup!;
+  }, []);
 
   const scrollToBottom = (): void => {
     textMessageEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -138,7 +140,7 @@ export default function InnerChatPage() {
         typing,
       },
     });
-  }, [ typing ]);
+  }, [typing]);
 
   return questionAndOpinions === null ? (
     <FullSpinner />
