@@ -322,7 +322,7 @@ export function SOCKET(
     ensureConnectionInterval = setInterval(() => {
       if (Date.now() - timeOfLastPong.getTime() > 10 * 1000) {
         logger.warn("Client disconnected unexpectedly: " + id);
-        client.close();
+        client.terminate();
       }
     }, 1000);
   }
