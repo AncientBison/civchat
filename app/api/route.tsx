@@ -515,9 +515,12 @@ export function SOCKET(
     logger.debug(`Recived message ${message.toString()} for ${id}`);
 
     if (partners === undefined) {
+      logger.debug("Starting getting redis connection");
       partners = new Partners(await getClient());
+      logger.debug("Redis connection established");
     }
 
+    logger.debug("Parsing payload");
     const payload = JSON.parse(message.toString());
 
     if (payload.type === "setId") {
@@ -612,5 +615,9 @@ export function SOCKET(
     timeOfLastPong = new Date(-1);
 
     ensureConnectionInterval = undefined;
+  });
+
+  client.on("error", (error) => {
+    logger.error(`Client error: ${error.name} with message ${error.message}`);
   });
 }
