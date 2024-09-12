@@ -521,6 +521,7 @@ export function SOCKET(
     const payload = JSON.parse(message.toString());
 
     if (payload.type === "setId") {
+      logger.debug(`Skipping normal execution due to payload type setId: ${id}`);
       if (id === "") {
         logger.debug("Setting id of new client");
         await setId(payload.data.id);
