@@ -8,8 +8,10 @@ declare global {
 
 export async function getClient() {
   if (globalThis.redisClient !== undefined && globalThis.redisClient.isOpen === true) {
+    logger.debug("Using cached redis client");
     return globalThis.redisClient;
   } else {
+    logger.debug("Creating new redis client");
     return await createClient({
       url: process.env.REDIS_URL,
     })
