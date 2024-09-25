@@ -1,7 +1,6 @@
 import { Avatar } from "@nextui-org/avatar";
 import React, { memo } from "react";
-
-import { TextMessage } from "@/app/chat/innerPage";
+import { TextMessage } from "@app/chat/innerPage";
 
 type ChatMessageProps = {
   textMessage: TextMessage;

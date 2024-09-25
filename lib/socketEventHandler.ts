@@ -1,8 +1,7 @@
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
-
-import { isPayloadOfType } from "./isPayloadOfType";
-
-import { Message, MessageType, TypedMessage } from "@/app/api/route";
+import { isPayloadOfType } from "@lib/isPayloadOfType";
+import { MessageType, TypedMessage } from "@type/message";
+import { sendSocketMessage } from "@lib/socket";
 
 type Handler<T extends MessageType> = {
   type: T;
@@ -50,12 +49,10 @@ export function createSocketEventHandler<T extends MessageType[]>(
     timeOfLastSocketCreation = new Date();
     Object.assign(socket, new WebSocket(socket.url));
     socket.onopen = () => {
-      socket.send(
-        JSON.stringify({
-          type: "setId",
-          data: { id: localStorage.getItem("id") ?? undefined },
-        } satisfies Message),
-      );
+      sendSocketMessage(socket, {
+        type: "setId",
+        data: { id: localStorage.getItem("id") ?? undefined },
+      });
     };
   };
 
@@ -70,7 +67,7 @@ export function createSocketEventHandler<T extends MessageType[]>(
   }, 500);
 
   const pingInterval = setInterval(() => {
-    socket.send(JSON.stringify({ type: "ping" } satisfies Message));
+    sendSocketMessage(socket, { type: "ping" });
   }, 1000);
 
   return () => {

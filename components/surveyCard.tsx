@@ -8,13 +8,12 @@ import { Divider } from "@nextui-org/divider";
 import { useWebSocket } from "next-ws/client";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-
-import { ResponsiveButtonGroup } from "./ResponsiveButtonGroup";
-
-import { Opinion } from "@/app/api/route";
-import { createSocketEventHandler } from "@/lib/socketEventHandler";
-import { sendSocketMessage } from "@/lib/socket";
-import { Question } from "@/lib/question";
+import { createSocketEventHandler } from "@lib/socketEventHandler";
+import { sendSocketMessage } from "@lib/socket";
+import { Question } from "@lib/question";
+import { Opinion } from "@type/opinion";
+9;
+import { ResponsiveButtonGroup } from "@components/ResponsiveButtonGroup";
 
 const buttons: {
   text: string;

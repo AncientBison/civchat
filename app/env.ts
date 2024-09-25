@@ -1,4 +1,4 @@
-import { Opinion } from "./api/route";
+import { Opinion } from "@type/opinion";
 
 export type CivChatSessionStorage = {
   questionId: string;

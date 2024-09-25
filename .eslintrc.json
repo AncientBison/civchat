@@ -43,6 +43,10 @@
         "argsIgnorePattern": "^_.*?$"
       }
     ],
+    "no-restricted-imports": ["error", {
+      "patterns": [".*"]
+    }],
+    "@typescript-eslint/no-extra-non-null-assertion": "error",
     "import/order": [
       "warn",
       {

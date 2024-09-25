@@ -6,10 +6,9 @@ import { useWebSocket } from "next-ws/client";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useDisclosure } from "@nextui-org/modal";
-
-import { createSocketEventHandler } from "@/lib/socketEventHandler";
-import { sendSocketMessage } from "@/lib/socket";
-import { AboutDialog } from "@/components/aboutDialog";
+import { createSocketEventHandler } from "@lib/socketEventHandler";
+import { sendSocketMessage } from "@lib/socket";
+import { AboutDialog } from "@components/aboutDialog";
 
 const conditions = [
   "failed",

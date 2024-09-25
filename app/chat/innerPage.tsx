@@ -6,20 +6,18 @@ import { Button } from "@nextui-org/button";
 import { Card, CardBody, CardFooter, CardHeader } from "@nextui-org/card";
 import { useWebSocket } from "next-ws/client";
 import { useRouter } from "next/navigation";
-
+import { ChatMessage } from "@components/chatMessage";
+import { createSocketEventHandler } from "@lib/socketEventHandler";
+import { sendSocketMessage } from "@lib/socket";
+import { LoadingTripleDots } from "@components/loadingTripleDots";
+import { Question } from "@lib/question";
+import { ChatRulesDialog } from "@components/chatRulesDialog";
+import { FullSpinner } from "@components/FullSpinner";
+import { Opinion } from "@type/opinion";
 import {
   CivChatSessionStorage,
   ensureStorageIsCivChatSessionStorage,
-} from "../env";
-import { Opinion } from "../api/route";
-
-import { ChatMessage } from "@/components/chatMessage";
-import { createSocketEventHandler } from "@/lib/socketEventHandler";
-import { sendSocketMessage } from "@/lib/socket";
-import { LoadingTripleDots } from "@/components/loadingTripleDots";
-import { Question } from "@/lib/question";
-import { ChatRulesDialog } from "@/components/chatRulesDialog";
-import { FullSpinner } from "@/components/FullSpinner";
+} from "@app/env";
 
 export interface TextMessage {
   text: string;

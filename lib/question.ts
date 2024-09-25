@@ -1,4 +1,4 @@
-import questions from "@/lib/questions.json";
+import questions from "@lib/questions.json";
 
 export class Question {
   constructor(public id: number) {}

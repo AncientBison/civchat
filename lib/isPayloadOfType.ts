@@ -1,4 +1,4 @@
-import { MessageType, TypedMessage } from "@/app/api/route";
+import { MessageType, TypedMessage } from "@type/message";
 
 export function isPayloadOfType<T extends MessageType>(
   message: any,

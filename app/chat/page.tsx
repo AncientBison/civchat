@@ -1,6 +1,5 @@
 import { Metadata } from "next";
-
-import InnerChatPage from "./innerPage";
+import InnerChatPage from "@app/chat/innerPage";
 
 export const metadata: Metadata = {
   title: "Chat",

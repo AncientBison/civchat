@@ -1,6 +1,5 @@
 import { Metadata } from "next";
-
-import SurveyCard from "@/components/surveyCard";
+import SurveyCard from "@components/surveyCard";
 
 export const metadata: Metadata = {
   title: "Survey",
