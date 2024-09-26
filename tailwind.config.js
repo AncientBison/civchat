@@ -17,5 +17,16 @@ module.exports = {
     },
   },
   darkMode: "class",
-  plugins: [nextui(), tailwindScrollbar({ nocompatible: true, preferredStrategy: 'pseudoelements' })],
+  plugins: [nextui({
+    themes: {
+      dark: {
+        extend: "dark",
+        colors: {
+          danger: {
+            DEFAULT: "#A62D24",
+          },
+        },
+      }
+    }
+  }), tailwindScrollbar({ nocompatible: true, preferredStrategy: 'pseudoelements' })],
 }
