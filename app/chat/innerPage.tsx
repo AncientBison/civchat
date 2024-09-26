@@ -165,7 +165,7 @@ export default function InnerChatPage() {
               End Chat
             </Button>
           </CardHeader>
-          <CardBody className="h-[90vh] overflow-y-scroll p-4">
+          <CardBody className="h-[90vh] overflow-y-auto p-4">
             <p className="font-bold">{questionAndOpinions!.question.text}</p>
             <p>
               You said: {opinionToHumanReadable(questionAndOpinions!.opinion)}
