@@ -130,6 +130,12 @@ export default function InnerChatPage() {
   useEffect(() => {
     scrollToBottom();
   }, [textMessages]);
+  
+  useEffect(() => {
+    if (partnerTyping) {
+      scrollToBottom();
+    }
+  }, [partnerTyping]);
 
   useEffect(() => {
     sendSocketMessage(socket!, {
@@ -189,7 +195,7 @@ export default function InnerChatPage() {
                 placeholder="Type a message..."
                 value={inputTextMessage}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  setTyping(true);
+                  setTyping(e.target.value !== "");
                   setInputTextMessage(e.target.value);
                 }}
                 onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) =>
