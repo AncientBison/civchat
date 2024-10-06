@@ -29,7 +29,7 @@ export function SOCKET(
 
   let timeOfLastPong: Date = new Date(-1);
 
-  let ensureConnectionInterval: NodeJS.Timeout | undefined;
+  let ensureConnectionInterval: ReturnType<typeof setTimeout> | undefined;
 
   let isPartOfTotalOnlineUsersCount: boolean = false;
 
@@ -72,8 +72,10 @@ export function SOCKET(
 
     timeOfLastPong = new Date();
 
+    const socketStayAliveMaxInterval = 10 * 1000;
+
     ensureConnectionInterval = setInterval(async () => {
-      if (Date.now() - timeOfLastPong.getTime() > 10 * 1000) {
+      if (Date.now() - timeOfLastPong.getTime() > socketStayAliveMaxInterval) {
         logger.warn("Client disconnected unexpectedly: " + id);
         client.terminate();
         await closeSocket();

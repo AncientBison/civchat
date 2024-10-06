@@ -46,33 +46,40 @@ export function createSocketEventHandler<T extends MessageType[]>(
   let timeOfLastSocketCreation = new Date();
 
   const createNewSocketConnection = () => {
+    clearInterval(pingInterval);
     timeOfLastSocketCreation = new Date();
     Object.assign(socket, new WebSocket(socket.url));
     socket.onopen = () => {
+      console.error("it opened");
       sendSocketMessage(socket, {
         type: "setId",
         data: { id: localStorage.getItem("id") ?? undefined },
       });
+      createPingInterval();
     };
   };
 
-  const keepOpenSocketInterval = setInterval(() => {
-    if (
-      (socket.readyState === WebSocket.CLOSED ||
-        socket.readyState === WebSocket.CLOSING) &&
-      Date.now() - timeOfLastSocketCreation.getTime() > 20 * 1000
-    ) {
-      createNewSocketConnection();
-    }
-  }, 500);
+  let pingInterval: ReturnType<typeof setTimeout>;
 
-  const pingInterval = setInterval(() => {
-    sendSocketMessage(socket, { type: "ping" });
-  }, 1000);
+  function createPingInterval() {
+    const pingInterval = setInterval(() => {
+      if (
+        socket!.readyState === WebSocket.CLOSED ||
+        socket!.readyState === WebSocket.CLOSING
+      ) {
+        if (Date.now() - timeOfLastSocketCreation.getTime() > 20 * 1000) {
+          createNewSocketConnection();
+        }
+      } else {
+        sendSocketMessage(socket!, { type: "ping" });
+      }
+    }, 1000);
+  }
+
+  createPingInterval();
 
   return () => {
     socket.removeEventListener("message", onMessage);
     clearInterval(pingInterval);
-    clearInterval(keepOpenSocketInterval);
   };
 }
