@@ -17,6 +17,7 @@ import { opinion } from "@lib/socketEndpoints/opinion";
 import { textMessage } from "@lib/socketEndpoints/textMessage";
 import { endChat } from "@lib/socketEndpoints/endChat";
 import { startTyping } from "@lib/socketEndpoints/startTyping";
+import { currentOnline } from "@lib/socketEndpoints/currentOnline";
 
 export function SOCKET(
   client: WebSocketWithUuid,
@@ -30,7 +31,11 @@ export function SOCKET(
 
   let ensureConnectionInterval: NodeJS.Timeout | undefined;
 
-  async function setId(idToSet?: string) {
+  let isPartOfTotalOnlineUsersCount: boolean = false;
+
+  async function setId(idToSet?: string): Promise<boolean> {
+    let success: boolean;
+
     if (idToSet === undefined) {
       id = randomUUID();
       sendSocketMessage(client, {
@@ -40,6 +45,7 @@ export function SOCKET(
           id,
         },
       });
+      success = true;
     } else if (getClientFromUuid(idToSet, server) !== undefined) {
       sendSocketMessage(client, {
         type: "setIdResult",
@@ -48,6 +54,7 @@ export function SOCKET(
           id,
         },
       });
+      success = false;
     } else {
       id = idToSet;
       sendSocketMessage(client, {
@@ -57,6 +64,7 @@ export function SOCKET(
           id,
         },
       });
+      success = true;
     }
 
     client.uuid = id;
@@ -72,6 +80,8 @@ export function SOCKET(
         client.removeAllListeners();
       }
     }, 1000);
+
+    return success;
   }
 
   client.on("message", async (message) => {
@@ -80,13 +90,21 @@ export function SOCKET(
     logger.debug("Parsing payload");
     const payload = JSON.parse(message.toString());
 
+    const redis = await getClient();
+
     if (payload.type === "setId") {
       logger.debug(
         `Skipping normal execution due to payload type setId: ${id}`,
       );
       if (id === "") {
         logger.debug("Setting id of new client");
-        await setId(payload.data.id);
+        let success = await setId(payload.data.id);
+
+        if (success) {
+          redis.incr("usersOnline");
+
+          isPartOfTotalOnlineUsersCount = true;
+        }
 
         return;
       } else {
@@ -121,7 +139,7 @@ export function SOCKET(
 
     if (partners === undefined) {
       logger.debug("Starting getting redis connection");
-      partners = new Partners(await getClient());
+      partners = new Partners(redis);
       logger.debug("Redis connection established");
     }
 
@@ -148,6 +166,8 @@ export function SOCKET(
       case "startTyping":
         await startTyping(data, { typing: payload.data.typing });
         break;
+      case "currentOnline":
+        await currentOnline(data);
       default:
         if (process.env.NODE_ENV === "development") {
           logger.warn("Unknown message type:", payload.type);
@@ -160,6 +180,11 @@ export function SOCKET(
       logger.info("Socket closed: " + id);
     }
     const redis = await getClient();
+
+    if (isPartOfTotalOnlineUsersCount) {
+      (await getClient()).decr("usersOnline");
+      isPartOfTotalOnlineUsersCount = false;
+    }
 
     if (partners !== undefined && (await partners.has(id))) {
       const partnerId = (await partners.getPartnerId(id))!;
@@ -175,10 +200,11 @@ export function SOCKET(
     if (ensureConnectionInterval !== undefined) {
       clearInterval(ensureConnectionInterval);
     }
+
+    updateAllClientsCurrentUsersOnlineCount();
   }
 
   client.on("close", closeSocket);
-
   client.on("open", () => {
     id = "";
     partners = undefined;
@@ -191,4 +217,21 @@ export function SOCKET(
   client.on("error", (error) => {
     logger.error(`Client error: ${error.name} with message ${error.message}`);
   });
+
+  async function updateAllClientsCurrentUsersOnlineCount() {
+    const usersOnline = parseInt(
+      (await (await getClient()).get("usersOnline"))!,
+    );
+
+    server.clients.forEach(async (client) => {
+      sendSocketMessage(client, {
+        type: "currentOnlineResponse",
+        data: {
+          count: usersOnline,
+        },
+      });
+    });
+  }
+
+  updateAllClientsCurrentUsersOnlineCount();
 }

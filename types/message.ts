@@ -16,7 +16,9 @@ export type MessageType =
   | "noId"
   | "startTyping"
   | "ping"
-  | "pong";
+  | "pong"
+  | "currentOnline"
+  | "currentOnlineResponse";
 
 type BaseMessageWithoutData<T extends MessageType> = {
   type: T;
@@ -103,6 +105,15 @@ type PingMessage = BaseMessage<"ping">;
 
 type PongMessage = BaseMessage<"pong">;
 
+type CurrentOnlineMessage = BaseMessage<"currentOnline">;
+
+type CurrentOnlineResponseMessage = BaseMessage<
+  "currentOnlineResponse",
+  {
+    count: number;
+  }
+>;
+
 export type Message =
   | AddToRoomMessage
   | OpinionMessage
@@ -118,7 +129,9 @@ export type Message =
   | NoIdMessage
   | StartTypingMessage
   | PingMessage
-  | PongMessage;
+  | PongMessage
+  | CurrentOnlineMessage
+  | CurrentOnlineResponseMessage;
 
 export type TypedMessage<T extends MessageType> = T extends "addToRoom"
   ? AddToRoomMessage
@@ -150,4 +163,8 @@ export type TypedMessage<T extends MessageType> = T extends "addToRoom"
                             ? PingMessage
                             : T extends "pong"
                               ? PongMessage
-                              : never;
+                              : T extends "currentOnline"
+                                ? CurrentOnlineMessage
+                                : T extends "currentOnlineResponse"
+                                  ? CurrentOnlineResponseMessage
+                                  : never;

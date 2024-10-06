@@ -130,7 +130,7 @@ export default function InnerChatPage() {
   useEffect(() => {
     scrollToBottom();
   }, [textMessages]);
-  
+
   useEffect(() => {
     if (partnerTyping) {
       scrollToBottom();

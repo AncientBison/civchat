@@ -62,6 +62,9 @@ export default function Home() {
   const [waitingForPartner, setWaitingForPartner] = useState(false);
   const [condition, setCondition] = useState<Condition | null>(null);
   const [idSet, setIdSet] = useState<boolean>(false);
+  const [currentOnlineCount, setCurrentOnlineCount] = useState<number | null>(
+    null,
+  );
   const {
     isOpen: aboutDialogIsOpen,
     onOpenChange: aboutDialogOnOpenChange,
@@ -98,6 +101,11 @@ export default function Home() {
               message.data.message === "idAlreadySet"
             ) {
               localStorage.setItem("id", message.data.id);
+
+              sendSocketMessage(socket!, {
+                type: "currentOnline",
+              });
+
               setIdSet(true);
             } else if (message.data.message === "idTaken") {
               sendSocketMessage(socket!, {
@@ -107,6 +115,12 @@ export default function Home() {
                 },
               });
             }
+          },
+        },
+        {
+          type: "currentOnlineResponse",
+          handler: (message) => {
+            setCurrentOnlineCount(message.data.count);
           },
         },
       ),
@@ -153,12 +167,11 @@ export default function Home() {
         {waitingForPartner ||
         condition === null ||
         socket === null ||
+        currentOnlineCount === null ||
         !idSet ? (
           <Spinner
             label={
-              condition === null || socket === null || !idSet
-                ? "Loading..."
-                : "Finding another person..."
+              waitingForPartner ? "Finding another person..." : "Loading..."
             }
           />
         ) : (
@@ -166,6 +179,17 @@ export default function Home() {
             {condition !== null && condition !== "none" && (
               <p className="py-4">{conditionText[condition].description}</p>
             )}
+            <span className="mb-6">
+              {currentOnlineCount === 1 ? (
+                <p>You are the first one here!</p>
+              ) : (
+                <p>
+                  There are currently{" "}
+                  <span className="font-mono">{currentOnlineCount}</span> people
+                  online.
+                </p>
+              )}
+            </span>
 
             <Button
               color="primary"
