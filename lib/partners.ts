@@ -1,9 +1,9 @@
 import { Opinion } from "@type/opinion";
-import { getClient } from "@lib/redis";
+import { getRedisClient } from "@lib/redis";
 import { Question } from "@lib/question";
 
 export class Partners {
-  constructor(private redis: Awaited<ReturnType<typeof getClient>>) {}
+  constructor(private redis: Awaited<ReturnType<typeof getRedisClient>>) {}
 
   private static createPartnersId(id: string, partnerId: string) {
     return [id, partnerId].sort().join("");

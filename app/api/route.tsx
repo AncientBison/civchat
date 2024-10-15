@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 import { IncomingMessage } from "http";
 
 import { WebSocketServer } from "ws";
-import { getClient } from "@lib/redis";
+import { getRedisClient } from "@lib/redis";
 import { logger } from "@lib/pino";
 import {
   WebSocketWithUuid,
@@ -92,7 +92,7 @@ export function SOCKET(
     logger.debug("Parsing payload");
     const payload = JSON.parse(message.toString());
 
-    const redis = await getClient();
+    const redis = await getRedisClient();
 
     if (payload.type === "setId") {
       logger.debug(
@@ -181,10 +181,10 @@ export function SOCKET(
     if (id !== "") {
       logger.info("Socket closed: " + id);
     }
-    const redis = await getClient();
+    const redis = await getRedisClient();
 
     if (isPartOfTotalOnlineUsersCount) {
-      (await getClient()).decr("usersOnline");
+      (await getRedisClient()).decr("usersOnline");
       isPartOfTotalOnlineUsersCount = false;
     }
 
@@ -222,7 +222,7 @@ export function SOCKET(
 
   async function updateAllClientsCurrentUsersOnlineCount() {
     const usersOnline = parseInt(
-      (await (await getClient()).get("usersOnline"))!,
+      (await (await getRedisClient()).get("usersOnline"))!,
     );
 
     server.clients.forEach(async (client) => {

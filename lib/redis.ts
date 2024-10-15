@@ -5,7 +5,7 @@ declare global {
   var redisClient: ReturnType<typeof createClient>;
 }
 
-export async function getClient() {
+export async function getRedisClient() {
   if (
     globalThis.redisClient !== undefined &&
     globalThis.redisClient.isOpen === true

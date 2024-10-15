@@ -1,12 +1,16 @@
 import { createServer } from "node:http";
 
 import next from "next";
-import { Server } from "socket.io";
+import { Server, Socket } from "socket.io";
 import { logger } from "@lib/pino";
 import {
   ClientToServerEvents,
   ServerToClientEvents,
 } from "@lib/socketEndpoints";
+import { currentOnline } from "@lib/socketEndpoints/currentOnline";
+import { SocketEndpointData } from "@type/socketEndpoint";
+import { Partners } from "@lib/partners";
+import { getRedisClient } from "@lib/redis";
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";
@@ -32,13 +36,22 @@ app.prepare().then(() => {
     SocketData
   >(httpServer);
 
-  io.on("connection", (socket) => {
+  io.on("connection", async (socket) => {
     if (socket.recovered) {
       // TODO: write recovery condition
     } else {
       // TODO: rewrite handlers to work better for
+      socket.on("currentOnline", (async () => currentOnline(await getData(socket, io), [])));
     }
   });
+
+  const getData = async (socket: Socket, io: Server) => {
+    return {
+      client: socket,
+      server: io,
+      partners: new Partners(await getRedisClient())
+    }
+  }
 
   httpServer
     .once("error", (err) => {

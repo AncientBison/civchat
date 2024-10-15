@@ -1,16 +1,14 @@
 import { sendSocketMessage } from "@lib/socket";
 import { SocketEndpointData } from "@type/socketEndpoint";
+import { Events, Handler } from '@lib/socketEndpoints';
 
-export async function currentOnline({
+export const currentOnline: Handler<Events.CurrentOnline> = async ({
   client,
-  id,
-  partners,
   server,
-}: SocketEndpointData) {
-  sendSocketMessage(client, {
-    type: "currentOnlineResponse",
-    data: {
-      count: parseInt((await partners.getRedisClient().get("usersOnline"))!),
-    },
-  });
+  partners,
+}) => {
+  return {
+    message: "currentOnline",
+    count: server.engine.clientsCount
+  }
 }

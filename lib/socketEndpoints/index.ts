@@ -1,4 +1,5 @@
 import { Opinion } from "@type/opinion";
+import { SocketEndpointData } from '@type/socketEndpoint';
 
 type Response = {
   message: string;
@@ -8,22 +9,18 @@ type Response = {
 type EventResponse<
   Responses extends Response[],
   IdSet extends boolean = true,
-> = {
-  responses: Responses;
-};
+> = Responses[number];
 
-export interface ServerToClientEvents {
-  textMessage: (text: string) => EventResponse<[]>;
-  typingState: (typing: boolean) => EventResponse<[]>;
-  addToRoom: (roomInformation: { id: string; question: number }) => void;
-  endChat: () => EventResponse<[]>;
-}
+export type HandlerFunction<Responses extends Response[],  IdSet extends boolean> = (...args: any) => EventResponse<Responses, IdSet>;
 
-export interface ClientToServerEvents {
-  textMessage: (text: string) => EventResponse<[]>;
-  typingState: (typing: boolean) => EventResponse<[]>;
-  ping: () => EventResponse<[]>;
-  opinion: (opinion: Opinion) => EventResponse<
+export type Handler<Function extends HandlerFunction<Response[], boolean>> =
+(data: SocketEndpointData, params: Parameters<Function>) => Promise<ReturnType<Function>>
+
+export namespace Events {
+  export type TextMessage = (text: string) => EventResponse<[]>;
+  export type TypingState = (typing: boolean) => EventResponse<[]>;
+  export type AddToRoom = (roomInformation: { id: string; question: number }) => EventResponse<[]>;
+  export type Opinion = (opinion: Opinion) => EventResponse<
     [
       {
         message: "failedSurvey";
@@ -41,8 +38,8 @@ export interface ClientToServerEvents {
       },
     ]
   >;
-  endChat: () => EventResponse<[]>;
-  currentOnline: () => EventResponse<
+  export type EndChat = () => EventResponse<[]>;
+  export type CurrentOnline = () => EventResponse<
     [
       {
         message: "currentOnline";
@@ -50,7 +47,7 @@ export interface ClientToServerEvents {
       },
     ]
   >;
-  addToQueue: () => EventResponse<
+  export type AddToQueue = () => EventResponse<
     [
       {
         message: "waiting";
@@ -58,7 +55,7 @@ export interface ClientToServerEvents {
       },
     ]
   >;
-  setId: (id: string | undefined) => EventResponse<
+  export type SetId = (id: string | undefined) => EventResponse<
     [
       {
         message: "setId";
@@ -79,4 +76,23 @@ export interface ClientToServerEvents {
     ],
     false
   >;
+}
+
+type Asyncify<F extends (...args: any[]) => any> = (...args: Parameters<F>) => Promise<ReturnType<F>>;
+
+export interface ServerToClientEvents {
+  textMessage: Asyncify<Events.TextMessage>,
+  typingState: Asyncify<Events.TypingState>,
+  addToRoom: Asyncify<Events.AddToRoom>,
+  endChat: Asyncify<Events.EndChat>,
+}
+
+export interface ClientToServerEvents {
+  textMessage: Asyncify<Events.TextMessage>;
+  typingState: Asyncify<Events.TypingState>;
+  setId: Asyncify<Events.SetId>;
+  addToQueue: Asyncify<Events.AddToQueue>;
+  currentOnline: Asyncify<Events.CurrentOnline>;
+  endChat: Asyncify<Events.EndChat>;
+  opinion: Asyncify<Events.Opinion>;
 }

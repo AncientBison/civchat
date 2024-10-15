@@ -1,9 +1,9 @@
 import { Partners } from "@lib/partners";
 import WebSocket, { WebSocketServer } from "ws";
+import { TypedServer, TypedSocket } from "@type/socket";
 
 export type SocketEndpointData = {
-  client: WebSocket;
-  server: WebSocketServer;
-  id: string;
+  client: TypedSocket;
+  server: TypedServer;
   partners: Partners;
 };
