@@ -1,14 +1,13 @@
-import { sendSocketMessage } from "@lib/socket";
-import { SocketEndpointData } from "@type/socketEndpoint";
-import { Events, Handler } from '@lib/socketEndpoints';
+import { Handler } from "@lib/socketEndpoints";
+import { Events } from "@lib/socketEndpoints/events";
 
-export const currentOnline: Handler<Events.CurrentOnline> = async ({
+export const currentOnline: Handler<Events["CurrentOnline"]> = async ({
   client,
   server,
   partners,
 }) => {
   return {
     message: "currentOnline",
-    count: server.engine.clientsCount
-  }
-}
+    count: server.engine.clientsCount,
+  };
+};

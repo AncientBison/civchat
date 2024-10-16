@@ -8,9 +8,9 @@ import {
   ServerToClientEvents,
 } from "@lib/socketEndpoints";
 import { currentOnline } from "@lib/socketEndpoints/currentOnline";
-import { SocketEndpointData } from "@type/socketEndpoint";
 import { Partners } from "@lib/partners";
 import { getRedisClient } from "@lib/redis";
+import { InterServerEvents, SocketData } from "@type/socket";
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";
@@ -18,13 +18,6 @@ const port = 3000;
 // when using middleware `hostname` and `port` must be provided below
 const app = next({ dev, hostname, port });
 const handler = app.getRequestHandler();
-
-interface InterServerEvents {}
-
-interface SocketData {
-  name: string;
-  age: number;
-}
 
 app.prepare().then(() => {
   const httpServer = createServer(handler);
@@ -41,7 +34,12 @@ app.prepare().then(() => {
       // TODO: write recovery condition
     } else {
       // TODO: rewrite handlers to work better for
-      socket.on("currentOnline", (async () => currentOnline(await getData(socket, io), [])));
+      socket.on("addToQueue", async () =>
+        currentOnline(await getData(socket, io), []),
+      );
+      socket.on("currentOnline", async () =>
+        currentOnline(await getData(socket, io), []),
+      );
     }
   });
 
@@ -49,9 +47,9 @@ app.prepare().then(() => {
     return {
       client: socket,
       server: io,
-      partners: new Partners(await getRedisClient())
-    }
-  }
+      partners: new Partners(await getRedisClient()),
+    };
+  };
 
   httpServer
     .once("error", (err) => {

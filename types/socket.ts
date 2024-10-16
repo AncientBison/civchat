@@ -4,12 +4,9 @@ import {
   ServerToClientEvents,
 } from "@lib/socketEndpoints";
 
-interface InterServerEvents {}
+export interface InterServerEvents {}
 
-interface SocketData {
-  name: string;
-  age: number;
-}
+export interface SocketData {}
 
 export type TypedSocket = Socket<
   ClientToServerEvents,
