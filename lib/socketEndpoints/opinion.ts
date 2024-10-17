@@ -1,47 +1,40 @@
-import { getClientFromUuid, sendSocketMessage } from "@lib/socket";
-import { Message } from "@type/message";
-import { Opinion } from "@type/opinion";
-import { SocketEndpointData } from "@type/socketEndpoint";
+import { Handler } from '@lib/socketEndpoints';
+import { Events } from '@lib/socketEndpoints/events';
 
-export async function opinion(
-  { client, id, partners, server }: SocketEndpointData,
-  {
-    opinion,
-  }: {
-    opinion: Opinion;
-  },
-) {
-  const partnerId = await partners.getPartnerId(id);
+export const opinion: Handler<Events["Opinion"]> = async (
+  { client, partners, server },
+  { opinion }) => {
+  const partnerId = await partners.getPartnerId(client.id);
 
   if (partnerId === undefined) {
-    return;
+    return {
+      message: "noPartnerId"
+    };
   }
 
-  await partners!.setAwnser(id, partnerId, opinion);
-  const answers = await partners!.getQuestionAnswers(id, partnerId);
-  const question = await partners!.getQuestion(id, partnerId);
+  await partners.setAwnser(client.id, partnerId, opinion);
+  const answers = await partners!.getQuestionAnswers(client.id, partnerId);
+  const question = await partners!.getQuestion(client.id, partnerId);
 
   if (answers === undefined || question === undefined) {
-    return;
+    return {
+      message: "internalServerError"
+    };
   }
 
   const partnerOpinion = answers[partnerId];
-  const partner = getClientFromUuid(partnerId, server);
-
-  if (partner === undefined) {
-    throw Error("Invalid databsae state");
-  }
 
   if (opinion === "noOpinion") {
-    const failedSurveyMessage: Message = {
-      type: "failedSurvey",
-      data: {
-        reason: "noOpinion",
-      },
-    };
+    await partners.seperatePartners(client.id, partnerId);
 
-    sendSocketMessage(partner, failedSurveyMessage);
-    sendSocketMessage(client, failedSurveyMessage);
+    server.to(partnerId).emit("failedSurvey", {
+      reason: "noOpinion"
+    });
+
+    return {
+      message: "failedSurvey",
+      reason: "noOpinion"
+    }
   } else if (partnerOpinion !== null) {
     const partnerDisagee =
       partnerOpinion === "disagree" || partnerOpinion === "stronglyDisagree";
@@ -51,34 +44,34 @@ export async function opinion(
     const agree = opinion === "agree" || opinion === "stronglyAgree";
 
     if ((partnerDisagee && agree) || (partnerAgree && disagree)) {
-      sendSocketMessage(partner, {
-        type: "addToChatRoom",
-        data: {
-          partnerOpinion: opinion,
-          opinion: partnerOpinion,
-          questionId: question.id,
-        },
+      server.to(partnerId).emit("addToChatRoom", {
+        opinion: partnerOpinion,
+        partnerOpinion: opinion,
+        questionId: question.id
       });
-      sendSocketMessage(client, {
-        type: "addToChatRoom",
-        data: {
-          partnerOpinion,
-          opinion,
-          questionId: question.id,
-        },
-      });
+      
+      return {
+        message: "addToChatRoom",
+        opinion,
+        partnerOpinion,
+        questionId: question.id
+      }
     } else {
-      const failedSurveyMessage: Message = {
-        type: "failedSurvey",
-        data: {
-          reason: "sharedOpinion",
-        },
-      };
+      await partners.seperatePartners(client.id, partnerId);
 
-      sendSocketMessage(partner, failedSurveyMessage);
-      sendSocketMessage(client, failedSurveyMessage);
+      server.to(partnerId).emit("failedSurvey", {
+        reason: "sharedOpinion"
+      });
 
-      await partners!.seperatePartners(id, partnerId);
+      return {
+        message: "failedSurvey",
+        reason: "sharedOpinion"
+      }
+
+    }
+  } else {
+    return {
+      message: "waitingForPartnerOpinion"
     }
   }
 }

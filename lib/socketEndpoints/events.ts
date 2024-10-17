@@ -23,6 +23,15 @@ export interface Events {
         opinion: Opinion;
         questionId: number;
       }
+    | {
+        message: "noPartnerId";
+      }
+    | {
+        message: "internalServerError";
+      }
+    | {
+      message: "waitingForPartnerOpinion"
+    }
   >;
   EndChat: HandlerFunction;
   CurrentOnline: HandlerFunction<
@@ -34,10 +43,21 @@ export interface Events {
   >;
   AddToQueue: HandlerFunction<
     {},
+    | {
+        message: "waiting";
+      }
+    | {
+        message: "addToRoom";
+        questionId: number;
+      }
+  >;
+  FailedSurvey: HandlerFunction<
+    { reason: "noOpinion" } | { reason: "sharedOpinion" }
+  >;
+  AddToChatRoom: HandlerFunction<
     {
-      message: "waiting";
-    } | {
-      message: "addToRoom"
+      partnerOpinion: Opinion;
+      opinion: Opinion;
       questionId: number;
     }
   >;

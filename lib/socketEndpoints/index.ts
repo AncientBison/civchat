@@ -27,6 +27,8 @@ export interface ServerToClientEvents {
   typingState: Asyncify<Events["TypingState"]>;
   addToRoom: Asyncify<Events["AddToRoom"]>;
   endChat: Asyncify<Events["EndChat"]>;
+  failedSurvey: Asyncify<Events["FailedSurvey"]>;
+  addToChatRoom: Asyncify<Events["AddToChatRoom"]>;
 }
 
 export interface ClientToServerEvents {
