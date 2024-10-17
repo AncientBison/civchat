@@ -7,15 +7,20 @@ import {
   ClientToServerEvents,
   ServerToClientEvents,
 } from "@lib/socketEndpoints";
-import { currentOnline } from "@lib/socketEndpoints/currentOnline";
 import { Partners } from "@lib/partners";
 import { getRedisClient } from "@lib/redis";
-import { InterServerEvents, SocketData } from "@type/socket";
-import { addToQueue } from '@lib/socketEndpoints/addToQueue';
+import {
+  InterServerEvents,
+  SocketData,
+  TypedServer,
+  TypedSocket,
+} from "@type/socket";
+import { addToQueue } from "@lib/socketEndpoints/addToQueue";
 import { opinion } from "@lib/socketEndpoints/opinion";
 import { endChat } from "@lib/socketEndpoints/endChat";
-import { textMessage } from '@lib/socketEndpoints/textMessage';
+import { textMessage } from "@lib/socketEndpoints/textMessage";
 import { typingState } from "@lib/socketEndpoints/typingState";
+import { requestCurrentlyOnlineCount } from "@lib/socketEndpoints/requestCurrentlyOnlineCount";
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";
@@ -35,34 +40,35 @@ app.prepare().then(() => {
   >(httpServer);
 
   io.on("connection", async (socket) => {
-    if (socket.recovered) {
-      // TODO: write recovery condition
-    } else {
-      socket.on("addToQueue", async () =>
-        addToQueue(await getData(socket, io), {}),
-      );
-      socket.on("currentOnline", async () =>
-        currentOnline(await getData(socket, io), {}),
-      );
-      socket.on("endChat", async () =>
-        endChat(await getData(socket, io), {}),
-      );
-      socket.on("opinion", async ({opinion: selfOpinion}) =>
-        opinion(await getData(socket, io), {
-          opinion: selfOpinion
-        }),
-      );
-      socket.on("textMessage", async ({text}) =>
-        textMessage(await getData(socket, io), {
-          text
-        }),
-      );
-      socket.on("typingState", async ({typing}) =>
-        typingState(await getData(socket, io), {
-          typing
-        }),
-      );
-    }
+    logger.info("New connection");
+    socket.on("addToQueue", async (params, callback) =>
+      addToQueue(await getData(socket, io), params, callback),
+    );
+    socket.on("endChat", async (params, callback) =>
+      endChat(await getData(socket, io), params, callback),
+    );
+    socket.on("opinion", async (params, callback) =>
+      opinion(await getData(socket, io), params, callback),
+    );
+    socket.on("textMessage", async (params, callback) =>
+      textMessage(await getData(socket, io), params, callback),
+    );
+    socket.on("typingState", async (params, callback) =>
+      typingState(await getData(socket, io), params, callback),
+    );
+    socket.on("requestCurrentlyOnlineCount", async (params, callback) =>
+      requestCurrentlyOnlineCount(await getData(socket, io), params, callback),
+    );
+
+    // if (socket.recovered) {
+    //   // TODO: write recovery condition
+    // } else {
+
+    // }
+    updateCurrentlyOnlineCount(socket, io);
+    socket.on("disconnect", () => {
+      updateCurrentlyOnlineCount(socket, io);
+    });
   });
 
   const getData = async (socket: Socket, io: Server) => {
@@ -82,3 +88,21 @@ app.prepare().then(() => {
       logger.debug(`> Ready on http://${hostname}:${port}`);
     });
 });
+
+function updateCurrentlyOnlineCount(socket: TypedSocket, io: TypedServer) {
+  socket.broadcast.emit(
+    "currentOnline",
+    {
+      count: io.engine.clientsCount,
+    },
+    () => {},
+  );
+
+  socket.emit(
+    "currentOnline",
+    {
+      count: io.engine.clientsCount,
+    },
+    () => {},
+  );
+}

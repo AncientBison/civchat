@@ -3,9 +3,9 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbo",
+    "dev": "cross-env TURBOPACK=1 NODE_ENV=development tsx watch server.ts",
     "build": "next build",
-    "start": "next start",
+    "start": "cross-env NODE_ENV=production tsx server.ts",
     "lint": "eslint . --ext .ts,.tsx -c .eslintrc.json --fix",
     "prepare": "husky install"
   },
@@ -32,6 +32,7 @@
     "@types/ws": "^8.5.12",
     "clsx": "2.1.1",
     "framer-motion": "~11.1.1",
+    "husky": "^9.1.6",
     "intl-messageformat": "^10.5.0",
     "next": "14.2.10",
     "next-themes": "^0.2.1",
@@ -42,6 +43,7 @@
     "react-dom": "18.3.1",
     "redis": "^4.7.0",
     "socket.io": "^4.8.0",
+    "socket.io-client": "^4.8.0",
     "ws": "^8.18.0"
   },
   "devDependencies": {
@@ -51,6 +53,7 @@
     "@typescript-eslint/eslint-plugin": "7.2.0",
     "@typescript-eslint/parser": "7.2.0",
     "autoprefixer": "10.4.19",
+    "cross-env": "^7.0.3",
     "eslint": "^8.57.0",
     "eslint-config-next": "14.2.1",
     "eslint-config-prettier": "^8.2.0",
@@ -61,17 +64,12 @@
     "eslint-plugin-react": "^7.23.2",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-unused-imports": "^3.2.0",
-    "husky": "^9.1.6",
-    "lint-staged": "^15.2.10",
+    "husky": "^8.0.0",
     "postcss": "8.4.38",
     "tailwind-scrollbar": "^3.1.0",
     "tailwind-variants": "^0.2.1",
     "tailwindcss": "3.4.3",
+    "tsx": "^4.19.1",
     "typescript": "5.0.4"
-  },
-  "lint-staged": {
-    "*.{ts,tsx}": [
-      "eslint --quiet --fix"
-    ]
   }
 }

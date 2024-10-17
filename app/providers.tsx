@@ -5,7 +5,7 @@ import { NextUIProvider } from "@nextui-org/system";
 import { useRouter } from "next/navigation";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { ThemeProviderProps } from "next-themes/dist/types";
-import { WebSocketProvider } from "next-ws/client";
+import { SocketIoProvider } from "@components/SocketIoProvider";
 
 export interface ProvidersProps {
   children: React.ReactNode;
@@ -22,12 +22,12 @@ export function Providers({ children, themeProps }: ProvidersProps) {
   }, []);
 
   return (
-    <WebSocketProvider url="api">
+    <SocketIoProvider>
       <NextUIProvider navigate={router.push}>
         <NextThemesProvider {...themeProps}>
           <React.Suspense>{children}</React.Suspense>
         </NextThemesProvider>
       </NextUIProvider>
-    </WebSocketProvider>
+    </SocketIoProvider>
   );
 }

@@ -2,13 +2,11 @@
 
 import { Button } from "@nextui-org/button";
 import { Spinner } from "@nextui-org/spinner";
-import { useWebSocket } from "next-ws/client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useDisclosure } from "@nextui-org/modal";
-import { createSocketEventHandler } from "@lib/socketEventHandler";
-import { sendSocketMessage } from "@lib/socket";
 import { AboutDialog } from "@components/aboutDialog";
+import useSocketIo from "@lib/hooks/useSocketIo";
 
 const conditions = [
   "failed",
@@ -55,13 +53,21 @@ const conditionText: Record<
   },
 };
 
+const addToRoom = (
+  questionId: number,
+  router: ReturnType<typeof useRouter>,
+) => {
+  sessionStorage.setItem("questionId", JSON.stringify(questionId));
+
+  router.push("/survey");
+};
+
 export default function Home() {
-  const socket = useWebSocket();
+  const socket = useSocketIo();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [waitingForPartner, setWaitingForPartner] = useState(false);
   const [condition, setCondition] = useState<Condition | null>(null);
-  const [idSet, setIdSet] = useState<boolean>(false);
   const [currentOnlineCount, setCurrentOnlineCount] = useState<number | null>(
     null,
   );
@@ -71,72 +77,24 @@ export default function Home() {
     onOpen: aboutDialogOnOpen,
   } = useDisclosure();
 
-  const createMemoizedSocketEventHandlerCleanup = useMemo(
-    () =>
-      createSocketEventHandler(
-        socket!,
-        router,
-        {
-          type: "waiting",
-          handler: () => {
-            setWaitingForPartner(true);
-          },
-        },
-        {
-          type: "addToRoom",
-          handler: (message) => {
-            sessionStorage.setItem(
-              "questionId",
-              JSON.stringify(message.data.questionId),
-            );
-            router.push("/survey");
-          },
-        },
-        {
-          type: "setIdResult",
-          handler: (message) => {
-            if (
-              message.data.message === "generatedId" ||
-              message.data.message === "setId" ||
-              message.data.message === "idAlreadySet"
-            ) {
-              localStorage.setItem("id", message.data.id);
-
-              sendSocketMessage(socket!, {
-                type: "currentOnline",
-              });
-
-              setIdSet(true);
-            } else if (message.data.message === "idTaken") {
-              sendSocketMessage(socket!, {
-                type: "setId",
-                data: {
-                  id: undefined,
-                },
-              });
-            }
-          },
-        },
-        {
-          type: "currentOnlineResponse",
-          handler: (message) => {
-            setCurrentOnlineCount(message.data.count);
-          },
-        },
-      ),
-    [],
-  );
-
   useEffect(() => {
-    return createMemoizedSocketEventHandlerCleanup!;
+    socket.on("addToRoom", async ({ questionId }) => {
+      addToRoom(questionId, router);
+    });
+
+    socket.on("currentOnline", async ({ count }) => {
+      setCurrentOnlineCount(count);
+    });
+
+    return () => {
+      socket.off("addToRoom");
+      socket.off("currentOnline");
+    };
   }, []);
 
   useEffect(() => {
-    sendSocketMessage(socket!, {
-      type: "setId",
-      data: {
-        id: localStorage.getItem("id") ?? undefined,
-      },
+    socket.emit("requestCurrentlyOnlineCount", {}, ({ count }) => {
+      setCurrentOnlineCount(count);
     });
   }, [socket]);
 
@@ -153,8 +111,15 @@ export default function Home() {
   }, [searchParams]);
 
   async function addToQueue() {
-    sendSocketMessage(socket!, { type: "addToQueue" });
-    setWaitingForPartner(true);
+    const res = socket.emit("addToQueue", {}, (res) => {
+      switch (res.message) {
+        case "waiting":
+          setWaitingForPartner(true);
+          break;
+        case "addToRoom":
+          addToRoom(res.questionId, router);
+      }
+    });
   }
 
   return (
@@ -167,8 +132,7 @@ export default function Home() {
         {waitingForPartner ||
         condition === null ||
         socket === null ||
-        currentOnlineCount === null ||
-        !idSet ? (
+        currentOnlineCount === null ? (
           <Spinner
             label={
               waitingForPartner ? "Finding another person..." : "Loading..."
@@ -177,9 +141,11 @@ export default function Home() {
         ) : (
           <>
             {condition !== null && condition !== "none" && (
-              <p className="py-4">{conditionText[condition].description}</p>
+              <p className="py-4 text-center">
+                {conditionText[condition].description}
+              </p>
             )}
-            <span className="mb-6">
+            <span className="mb-6 text-center">
               {currentOnlineCount === 1 ? (
                 <p>You are the first one here!</p>
               ) : (

@@ -1,15 +1,19 @@
-import { Handler } from '@lib/socketEndpoints';
-import { Events } from '@lib/socketEndpoints/events';
+import { Handler } from "@lib/socketEndpoints";
+import { Events } from "@lib/socketEndpoints/events";
 
 export const opinion: Handler<Events["Opinion"]> = async (
   { client, partners, server },
-  { opinion }) => {
+  { opinion },
+  callback,
+) => {
   const partnerId = await partners.getPartnerId(client.id);
 
   if (partnerId === undefined) {
-    return {
-      message: "noPartnerId"
-    };
+    callback({
+      message: "noPartnerId",
+    });
+
+    return;
   }
 
   await partners.setAwnser(client.id, partnerId, opinion);
@@ -17,9 +21,11 @@ export const opinion: Handler<Events["Opinion"]> = async (
   const question = await partners!.getQuestion(client.id, partnerId);
 
   if (answers === undefined || question === undefined) {
-    return {
-      message: "internalServerError"
-    };
+    callback({
+      message: "internalServerError",
+    });
+
+    return;
   }
 
   const partnerOpinion = answers[partnerId];
@@ -27,14 +33,18 @@ export const opinion: Handler<Events["Opinion"]> = async (
   if (opinion === "noOpinion") {
     await partners.seperatePartners(client.id, partnerId);
 
-    server.to(partnerId).emit("failedSurvey", {
-      reason: "noOpinion"
-    });
+    server.to(partnerId).emit(
+      "failedSurvey",
+      {
+        reason: "noOpinion",
+      },
+      () => {},
+    );
 
-    return {
+    callback({
       message: "failedSurvey",
-      reason: "noOpinion"
-    }
+      reason: "noOpinion",
+    });
   } else if (partnerOpinion !== null) {
     const partnerDisagee =
       partnerOpinion === "disagree" || partnerOpinion === "stronglyDisagree";
@@ -44,34 +54,41 @@ export const opinion: Handler<Events["Opinion"]> = async (
     const agree = opinion === "agree" || opinion === "stronglyAgree";
 
     if ((partnerDisagee && agree) || (partnerAgree && disagree)) {
-      server.to(partnerId).emit("addToChatRoom", {
-        opinion: partnerOpinion,
-        partnerOpinion: opinion,
-        questionId: question.id
-      });
-      
-      return {
+      server.to(partnerId).emit(
+        "addToChatRoom",
+        {
+          opinion: partnerOpinion,
+          partnerOpinion: opinion,
+          questionId: question.id,
+        },
+        () => {},
+      );
+
+      callback({
         message: "addToChatRoom",
         opinion,
         partnerOpinion,
-        questionId: question.id
-      }
+        questionId: question.id,
+      });
     } else {
       await partners.seperatePartners(client.id, partnerId);
 
-      server.to(partnerId).emit("failedSurvey", {
-        reason: "sharedOpinion"
-      });
+      server.to(partnerId).emit(
+        "failedSurvey",
+        {
+          reason: "sharedOpinion",
+        },
+        () => {},
+      );
 
-      return {
+      callback({
         message: "failedSurvey",
-        reason: "sharedOpinion"
-      }
-
+        reason: "sharedOpinion",
+      });
     }
   } else {
-    return {
-      message: "waitingForPartnerOpinion"
-    }
+    callback({
+      message: "waitingForPartnerOpinion",
+    });
   }
-}
+};

@@ -9,13 +9,12 @@ interface Response {
 export type HandlerFunction<
   Params extends { [key: string]: any } = {},
   Responses extends Response | void = void,
-> = (
-  params: Params,
-) => Responses;
+> = (params: Params, callback: (response: Responses) => void) => void;
 
 export type Handler<Function extends HandlerFunction<any, Response | void>> = (
   data: SocketEndpointData,
   params: Parameters<Function>[0],
+  callback: Parameters<Function>[1],
 ) => Promise<ReturnType<Function>>;
 
 type Asyncify<F extends (...args: any[]) => any> = (
@@ -29,13 +28,14 @@ export interface ServerToClientEvents {
   endChat: Asyncify<Events["EndChat"]>;
   failedSurvey: Asyncify<Events["FailedSurvey"]>;
   addToChatRoom: Asyncify<Events["AddToChatRoom"]>;
+  currentOnline: Asyncify<Events["CurrentOnline"]>;
 }
 
 export interface ClientToServerEvents {
   textMessage: Asyncify<Events["TextMessage"]>;
   typingState: Asyncify<Events["TypingState"]>;
   addToQueue: Asyncify<Events["AddToQueue"]>;
-  currentOnline: Asyncify<Events["CurrentOnline"]>;
   endChat: Asyncify<Events["EndChat"]>;
   opinion: Asyncify<Events["Opinion"]>;
+  requestCurrentlyOnlineCount: Asyncify<Events["RequestCurrentlyOnlineCount"]>;
 }

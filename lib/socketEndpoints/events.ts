@@ -1,6 +1,8 @@
 import { HandlerFunction } from "@lib/socketEndpoints";
 import { Opinion } from "@type/opinion";
 
+export type FailedSurveyReason = "noOpinion" | "sharedOpinion";
+
 export interface Events {
   TextMessage: HandlerFunction<{ text: string }>;
   TypingState: HandlerFunction<{ typing: boolean }>;
@@ -11,11 +13,7 @@ export interface Events {
     { opinion: Opinion },
     | {
         message: "failedSurvey";
-        reason: "noOpinion";
-      }
-    | {
-        message: "failedSurvey";
-        reason: "sharedOpinion";
+        reason: FailedSurveyReason;
       }
     | {
         message: "addToChatRoom";
@@ -30,17 +28,13 @@ export interface Events {
         message: "internalServerError";
       }
     | {
-      message: "waitingForPartnerOpinion"
-    }
+        message: "waitingForPartnerOpinion";
+      }
   >;
   EndChat: HandlerFunction;
-  CurrentOnline: HandlerFunction<
-    {},
-    {
-      message: "currentOnline";
-      count: number;
-    }
-  >;
+  CurrentOnline: HandlerFunction<{
+    count: number;
+  }>;
   AddToQueue: HandlerFunction<
     {},
     | {
@@ -54,11 +48,16 @@ export interface Events {
   FailedSurvey: HandlerFunction<
     { reason: "noOpinion" } | { reason: "sharedOpinion" }
   >;
-  AddToChatRoom: HandlerFunction<
+  AddToChatRoom: HandlerFunction<{
+    partnerOpinion: Opinion;
+    opinion: Opinion;
+    questionId: number;
+  }>;
+  RequestCurrentlyOnlineCount: HandlerFunction<
+    {},
     {
-      partnerOpinion: Opinion;
-      opinion: Opinion;
-      questionId: number;
+      message: "currentlyOnline";
+      count: number;
     }
   >;
 }

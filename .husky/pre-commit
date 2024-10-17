@@ -1,1 +1,5 @@
-npx lint-staged
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+npx prettier --cache --write **/*.{ts,tsx}
+npx eslint --cache --quiet --fix **/*.{ts,tsx}
