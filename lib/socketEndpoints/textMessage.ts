@@ -1,9 +1,7 @@
-import { getClientFromUuid, sendSocketMessage } from "@lib/socket";
-import { SocketEndpointData } from "@type/socketEndpoint";
 import { Handler } from '@lib/socketEndpoints';
 import { Events } from "@lib/socketEndpoints/events";
 
-export const endChat: Handler<Events["TextMessage"]> = async ({
+export const textMessage: Handler<Events["TextMessage"]> = async ({
   client,
   partners,
   server

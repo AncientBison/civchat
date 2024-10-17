@@ -4,7 +4,7 @@ import { Events } from '@lib/socketEndpoints/events';
 import { Handler } from '@lib/socketEndpoints';
 import { createRoomId } from "@lib/createRoomId";
 
-const addToQueue: Handler<Events["AddToQueue"]> = async ({
+export const addToQueue: Handler<Events["AddToQueue"]> = async ({
   client,
   partners,
   server,

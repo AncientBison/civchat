@@ -13,6 +13,9 @@ import { getRedisClient } from "@lib/redis";
 import { InterServerEvents, SocketData } from "@type/socket";
 import { addToQueue } from '@lib/socketEndpoints/addToQueue';
 import { opinion } from "@lib/socketEndpoints/opinion";
+import { endChat } from "@lib/socketEndpoints/endChat";
+import { textMessage } from '@lib/socketEndpoints/textMessage';
+import { typingState } from "@lib/socketEndpoints/typingState";
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";
@@ -35,16 +38,28 @@ app.prepare().then(() => {
     if (socket.recovered) {
       // TODO: write recovery condition
     } else {
-      // TODO: rewrite handlers to work better for
       socket.on("addToQueue", async () =>
         addToQueue(await getData(socket, io), {}),
       );
       socket.on("currentOnline", async () =>
         currentOnline(await getData(socket, io), {}),
       );
+      socket.on("endChat", async () =>
+        endChat(await getData(socket, io), {}),
+      );
       socket.on("opinion", async ({opinion: selfOpinion}) =>
         opinion(await getData(socket, io), {
           opinion: selfOpinion
+        }),
+      );
+      socket.on("textMessage", async ({text}) =>
+        textMessage(await getData(socket, io), {
+          text
+        }),
+      );
+      socket.on("typingState", async ({typing}) =>
+        typingState(await getData(socket, io), {
+          typing
         }),
       );
     }
