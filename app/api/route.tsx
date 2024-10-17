@@ -16,7 +16,7 @@ import { SocketEndpointData } from "@type/socketEndpoint";
 import { opinion } from "@lib/socketEndpoints/opinion";
 import { textMessage } from "@lib/socketEndpoints/textMessage";
 import { endChat } from "@lib/socketEndpoints/endChat";
-import { startTyping } from "@lib/socketEndpoints/startTyping";
+import { startTyping } from "@lib/socketEndpoints/typingState";
 import { currentOnline } from "@lib/socketEndpoints/currentOnline";
 
 export function SOCKET(

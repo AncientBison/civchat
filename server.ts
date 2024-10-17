@@ -11,6 +11,8 @@ import { currentOnline } from "@lib/socketEndpoints/currentOnline";
 import { Partners } from "@lib/partners";
 import { getRedisClient } from "@lib/redis";
 import { InterServerEvents, SocketData } from "@type/socket";
+import { addToQueue } from '@lib/socketEndpoints/addToQueue';
+import { opinion } from "@lib/socketEndpoints/opinion";
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";
@@ -35,10 +37,15 @@ app.prepare().then(() => {
     } else {
       // TODO: rewrite handlers to work better for
       socket.on("addToQueue", async () =>
-        currentOnline(await getData(socket, io), []),
+        addToQueue(await getData(socket, io), {}),
       );
       socket.on("currentOnline", async () =>
-        currentOnline(await getData(socket, io), []),
+        currentOnline(await getData(socket, io), {}),
+      );
+      socket.on("opinion", async ({opinion: selfOpinion}) =>
+        opinion(await getData(socket, io), {
+          opinion: selfOpinion
+        }),
       );
     }
   });

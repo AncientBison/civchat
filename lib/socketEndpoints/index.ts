@@ -8,12 +8,12 @@ interface Response {
 
 export type HandlerFunction<
   Params extends { [key: string]: any } = {},
-  Responses extends Response = never,
+  Responses extends Response | void = void,
 > = (
   params: Params,
 ) => Responses;
 
-export type Handler<Function extends HandlerFunction<any, Response>> = (
+export type Handler<Function extends HandlerFunction<any, Response | void>> = (
   data: SocketEndpointData,
   params: Parameters<Function>[0],
 ) => Promise<ReturnType<Function>>;
