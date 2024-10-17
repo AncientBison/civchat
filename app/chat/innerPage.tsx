@@ -1,14 +1,11 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Input } from "@nextui-org/input";
 import { Button } from "@nextui-org/button";
 import { Card, CardBody, CardFooter, CardHeader } from "@nextui-org/card";
-import { useWebSocket } from "next-ws/client";
 import { useRouter } from "next/navigation";
 import { ChatMessage } from "@components/chatMessage";
-import { createSocketEventHandler } from "@lib/socketEventHandler";
-import { sendSocketMessage } from "@lib/socket";
 import { LoadingTripleDots } from "@components/loadingTripleDots";
 import { Question } from "@lib/question";
 import { ChatRulesDialog } from "@components/chatRulesDialog";
@@ -18,6 +15,7 @@ import {
   CivChatSessionStorage,
   ensureStorageIsCivChatSessionStorage,
 } from "@app/env";
+import useSocketIo from "@lib/hooks/useSocketIo";
 
 export interface TextMessage {
   text: string;
@@ -42,7 +40,7 @@ function opinionToHumanReadable(opinion: string) {
 }
 
 export default function InnerChatPage() {
-  const socket = useWebSocket();
+  const socket = useSocketIo();
   const router = useRouter();
 
   const [questionAndOpinions, setQuestionAndOpinions] = useState<
@@ -77,50 +75,40 @@ export default function InnerChatPage() {
         { text: textMessageToSend, sender: "user" },
       ]);
       setInputTextMessage("");
-      sendSocketMessage(socket!, {
-        type: "textMessage",
-        data: {
+      socket.emit(
+        "textMessage",
+        {
           text: textMessageToSend,
         },
-      });
+        () => {},
+      );
 
       setTyping(false);
     }
   };
 
-  const createMemoizedSocketEventHandlerCleanup = useMemo(
-    () =>
-      createSocketEventHandler(
-        socket!,
-        router,
-        {
-          type: "textMessage",
-          handler: (message) => {
-            setPartnerTyping(false);
-            setTextMessages((oldTextMessages) => [
-              ...oldTextMessages,
-              { text: message.data.text, sender: "other" },
-            ]);
-          },
-        },
-        {
-          type: "endChat",
-          handler: () => {
-            router.push("/?endedOn");
-          },
-        },
-        {
-          type: "startTyping",
-          handler: (message) => {
-            setPartnerTyping(message.data.typing);
-          },
-        },
-      ),
-    [],
-  );
-
   useEffect(() => {
-    return createMemoizedSocketEventHandlerCleanup!;
+    socket.on("textMessage", async ({ text }) => {
+      setPartnerTyping(false);
+      setTextMessages((oldTextMessages) => [
+        ...oldTextMessages,
+        { text, sender: "other" },
+      ]);
+    });
+
+    socket.on("endChat", async () => {
+      router.push("/?endedOn");
+    });
+
+    socket.on("typingState", async ({ typing }) => {
+      setPartnerTyping(typing);
+    });
+
+    return () => {
+      socket.off("textMessage");
+      socket.off("endChat");
+      socket.off("typingState");
+    };
   }, []);
 
   const scrollToBottom = (): void => {
@@ -138,12 +126,13 @@ export default function InnerChatPage() {
   }, [partnerTyping]);
 
   useEffect(() => {
-    sendSocketMessage(socket!, {
-      type: "startTyping",
-      data: {
+    socket.emit(
+      "typingState",
+      {
         typing,
       },
-    });
+      () => {},
+    );
   }, [typing]);
 
   return questionAndOpinions === null ? (
@@ -158,7 +147,7 @@ export default function InnerChatPage() {
             <Button
               color="danger"
               onClick={() => {
-                sendSocketMessage(socket!, { type: "endChat" });
+                socket.emit("endChat", {}, () => {});
                 router.push("/?ended");
               }}
             >

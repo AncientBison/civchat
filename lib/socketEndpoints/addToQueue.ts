@@ -1,44 +1,39 @@
-import { getClientFromUuid, sendSocketMessage } from "@lib/socket";
-import { SocketEndpointData } from "@type/socketEndpoint";
+import { Events } from "@lib/socketEndpoints/events";
+import { Handler } from "@lib/socketEndpoints";
+import { createRoomId } from "@lib/createRoomId";
 
-export async function addToQueue({
-  client,
-  id,
-  partners,
-  server,
-}: SocketEndpointData) {
+export const addToQueue: Handler<Events["AddToQueue"]> = async (
+  { client, partners, server },
+  {},
+  callback,
+) => {
   const redis = partners.getRedisClient();
   const partnerId = await redis.rPop("queue");
 
   if (partnerId === null) {
-    await redis.lRem("queue", 1, id);
-    await redis.lPush("queue", id);
-    sendSocketMessage(client, { type: "waiting" });
-  } else {
-    const partner = getClientFromUuid(partnerId, server);
-
-    if (partner === undefined) {
-      throw Error("Invalid databsae state");
-    }
-
-    await partners.setPartners(id, partnerId);
-
-    const question = await partners.assignRandomQuestion(id, partnerId);
-
-    sendSocketMessage(partner, {
-      type: "addToRoom",
-      data: {
-        id,
-        questionId: question.id,
-      },
+    await redis.lRem("queue", 1, client.id);
+    await redis.lPush("queue", client.id);
+    callback({
+      message: "waiting",
     });
+  } else {
+    client.join(createRoomId(client.id, partnerId));
 
-    sendSocketMessage(client, {
-      type: "addToRoom",
-      data: {
-        id: partnerId,
+    const question = await partners.assignRandomQuestion(client.id, partnerId);
+
+    server.to(partnerId).emit(
+      "addToRoom",
+      {
         questionId: question.id,
       },
+      () => {},
+    );
+
+    await partners.setPartners(client.id, partnerId);
+
+    callback({
+      message: "addToRoom",
+      questionId: question.id,
     });
   }
-}
+};

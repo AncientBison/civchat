@@ -1,20 +1,20 @@
 import { Handler } from "@lib/socketEndpoints";
 import { Events } from "@lib/socketEndpoints/events";
 
-export const textMessage: Handler<Events["TextMessage"]> = async (
+export const typingState: Handler<Events["TypingState"]> = async (
   { client, partners, server },
-  { text },
+  { typing },
 ) => {
-  const partnerId = await partners.getPartnerId(client.id);
+  const partnerId = await partners!.getPartnerId(client.id);
 
   if (partnerId === undefined) {
     return;
   }
 
   server.to(partnerId).emit(
-    "textMessage",
+    "typingState",
     {
-      text,
+      typing,
     },
     () => {},
   );

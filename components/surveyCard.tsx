@@ -5,15 +5,13 @@ import { Button } from "@nextui-org/button";
 import { Spinner } from "@nextui-org/spinner";
 import { Spacer } from "@nextui-org/spacer";
 import { Divider } from "@nextui-org/divider";
-import { useWebSocket } from "next-ws/client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createSocketEventHandler } from "@lib/socketEventHandler";
-import { sendSocketMessage } from "@lib/socket";
 import { Question } from "@lib/question";
 import { Opinion } from "@type/opinion";
-9;
 import { ResponsiveButtonGroup } from "@components/ResponsiveButtonGroup";
+import useSocketIo from "@lib/hooks/useSocketIo";
+import { FailedSurveyReason } from "@lib/socketEndpoints/events";
 
 const buttons: {
   text: string;
@@ -59,8 +57,33 @@ const buttons: {
   },
 ];
 
+const addToChatRoom = (
+  opinion: Opinion,
+  partnerOpinion: Opinion,
+  router: ReturnType<typeof useRouter>,
+) => {
+  sessionStorage.setItem("opinion", opinion);
+  sessionStorage.setItem("partnerOpinion", partnerOpinion);
+
+  router.push("/chat");
+};
+
+const failedSurvey = (
+  reason: FailedSurveyReason,
+  router: ReturnType<typeof useRouter>,
+) => {
+  switch (reason) {
+    case "sharedOpinion":
+      router.push("/?failed");
+      break;
+    case "noOpinion":
+      router.push("/?failedNoOpinion");
+      break;
+  }
+};
+
 const SurveyCard = () => {
-  const socket = useWebSocket();
+  const socket = useSocketIo();
   const router = useRouter();
   const [waitingForPartner, setWaitingForPartner] = useState(false);
   const [question, setQuestion] = useState<Question | null>(null);
@@ -76,48 +99,46 @@ const SurveyCard = () => {
   }, []);
 
   function sendOpinionMessage(opinion: Opinion) {
-    sendSocketMessage(socket!, {
-      type: "opinion",
-      data: { opinion },
-    });
-    setWaitingForPartner(true);
+    socket.emit(
+      "opinion",
+      {
+        opinion,
+      },
+      (res) => {
+        switch (res.message) {
+          case "addToChatRoom":
+            addToChatRoom(res.opinion, res.partnerOpinion, router);
+            break;
+          case "failedSurvey":
+            failedSurvey(res.reason, router);
+            break;
+          case "internalServerError":
+            router.push("/");
+            break;
+          case "noPartnerId":
+            router.push("/");
+            break;
+          case "waitingForPartnerOpinion":
+            setWaitingForPartner(true);
+            break;
+        }
+      },
+    );
   }
 
-  const createMemoizedSocketEventHandlerCleanup = useMemo(
-    () =>
-      createSocketEventHandler(
-        socket!,
-        router,
-        {
-          type: "addToChatRoom",
-          handler: (message) => {
-            sessionStorage.setItem("opinion", message.data.opinion);
-            sessionStorage.setItem(
-              "partnerOpinion",
-              message.data.partnerOpinion,
-            );
-            router.push("/chat");
-          },
-        },
-        {
-          type: "failedSurvey",
-          handler: (message) => {
-            switch (message.data.reason) {
-              case "sharedOpinion":
-                router.push("/?failed");
-                break;
-              case "noOpinion":
-                router.push("/?failedNoOpinion");
-                break;
-            }
-          },
-        },
-      ),
-    [],
-  );
-
   useEffect(() => {
-    return createMemoizedSocketEventHandlerCleanup!;
+    socket.on("failedSurvey", async ({ reason }) => {
+      failedSurvey(reason, router);
+    });
+
+    socket.on("addToChatRoom", async ({ opinion, partnerOpinion }) => {
+      addToChatRoom(opinion, partnerOpinion, router);
+    });
+
+    return () => {
+      socket.off("failedSurvey");
+      socket.off("addToChatRoom");
+    };
   }, []);
 
   return waitingForPartner ? (

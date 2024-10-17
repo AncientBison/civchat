@@ -1,4 +1,5 @@
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
 
-npx lint-staged
+npx prettier --cache --write **/*.{ts,tsx}
+npx eslint --cache --quiet --fix **/*.{ts,tsx}

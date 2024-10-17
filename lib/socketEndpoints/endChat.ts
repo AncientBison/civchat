@@ -1,27 +1,18 @@
-import { getClientFromUuid, sendSocketMessage } from "@lib/socket";
-import { SocketEndpointData } from "@type/socketEndpoint";
+import { Handler } from "@lib/socketEndpoints";
+import { Events } from "@lib/socketEndpoints/events";
 
-export async function endChat({
+export const endChat: Handler<Events["EndChat"]> = async ({
   client,
-  id,
   partners,
   server,
-}: SocketEndpointData) {
-  const partnerId = await partners!.getPartnerId(id);
+}) => {
+  const partnerId = await partners.getPartnerId(client.id);
 
   if (partnerId === undefined) {
     return;
   }
 
-  const partner = getClientFromUuid(partnerId, server);
+  server.to(partnerId).emit("endChat", {}, () => {});
 
-  if (!partner) {
-    return;
-  }
-
-  sendSocketMessage(partner, {
-    type: "endChat",
-  });
-
-  await partners.seperatePartners(id, partnerId);
-}
+  await partners.seperatePartners(client.id, partnerId);
+};
