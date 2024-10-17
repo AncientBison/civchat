@@ -1,28 +1,22 @@
 import { getClientFromUuid, sendSocketMessage } from "@lib/socket";
 import { SocketEndpointData } from "@type/socketEndpoint";
+import { Handler } from '@lib/socketEndpoints';
+import { Events } from "@lib/socketEndpoints/events";
 
-export async function textMessage(
-  { client, id, partners, server }: SocketEndpointData,
-  {
-    text,
-  }: {
-    text: string;
-  },
-) {
-  const partnerId = await partners!.getPartnerId(id);
+export const endChat: Handler<Events["TextMessage"]> = async ({
+  client,
+  partners,
+  server
+}, {
+  text
+}) => {
+  const partnerId = await partners.getPartnerId(client.id);
 
   if (partnerId === undefined) {
     return;
   }
 
-  const partner = getClientFromUuid(partnerId, server);
-
-  if (!partner) {
-    return;
-  }
-
-  sendSocketMessage(partner, {
-    type: "textMessage",
-    data: { text },
+  server.to(partnerId).emit("textMessage", {
+    text
   });
 }
