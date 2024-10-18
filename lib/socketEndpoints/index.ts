@@ -29,6 +29,7 @@ export interface ServerToClientEvents {
   failedSurvey: Asyncify<Events["FailedSurvey"]>;
   addToChatRoom: Asyncify<Events["AddToChatRoom"]>;
   currentOnline: Asyncify<Events["CurrentOnline"]>;
+  partnerLeft: Asyncify<Events["PartnerLeft"]>;
 }
 
 export interface ClientToServerEvents {

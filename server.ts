@@ -21,6 +21,7 @@ import { endChat } from "@lib/socketEndpoints/endChat";
 import { textMessage } from "@lib/socketEndpoints/textMessage";
 import { typingState } from "@lib/socketEndpoints/typingState";
 import { requestCurrentlyOnlineCount } from "@lib/socketEndpoints/requestCurrentlyOnlineCount";
+import { closeSocket } from "@lib/closeSocket";
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";
@@ -66,7 +67,9 @@ app.prepare().then(() => {
 
     // }
     updateCurrentlyOnlineCount(socket, io);
-    socket.on("disconnect", () => {
+    
+    socket.on("disconnect", async () => {
+      closeSocket(await getData(socket, io));
       updateCurrentlyOnlineCount(socket, io);
     });
   });

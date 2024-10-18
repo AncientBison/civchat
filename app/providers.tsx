@@ -22,7 +22,7 @@ export function Providers({ children, themeProps }: ProvidersProps) {
   }, []);
 
   return (
-    <SocketIoProvider>
+    <SocketIoProvider navigate={router.push}>
       <NextUIProvider navigate={router.push}>
         <NextThemesProvider {...themeProps}>
           <React.Suspense>{children}</React.Suspense>

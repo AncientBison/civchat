@@ -5,7 +5,10 @@ import { socket } from "@socket";
 
 export const SocketContext = createContext(socket);
 
-export const SocketIoProvider: FC<{ children: ReactNode }> = ({ children }) => {
+export const SocketIoProvider: FC<{
+  children: ReactNode;
+  navigate: (path: string) => void;
+}> = ({ children, navigate }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [transport, setTransport] = useState("N/A");
 
@@ -26,6 +29,10 @@ export const SocketIoProvider: FC<{ children: ReactNode }> = ({ children }) => {
     function onDisconnect() {
       setIsConnected(false);
       setTransport("N/A");
+    }
+
+    function onPartnerLeave() {
+      navigate("/?left");
     }
 
     socket.on("connect", onConnect);

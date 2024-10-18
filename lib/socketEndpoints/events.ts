@@ -60,4 +60,5 @@ export interface Events {
       count: number;
     }
   >;
+  PartnerLeft: HandlerFunction<{}>;
 }
