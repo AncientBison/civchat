@@ -26,6 +26,14 @@ module.exports = {
             DEFAULT: "#A62D24",
           },
         },
+      },
+      light: {
+        extend: "light",
+        colors: {
+          danger: {
+            DEFAULT: "#E04343",
+          },
+        },
       }
     }
   }), tailwindScrollbar({ nocompatible: true, preferredStrategy: 'pseudoelements' })],
