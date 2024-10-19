@@ -8,7 +8,7 @@ CivChat is a chatroom made to help unite Americans. Our goal is to create a plac
 - [React](https://react.dev)
 - [Next.js 14](https://nextjs.org/docs/getting-started)
 - [NextUI v2](https://nextui.org/)
-- [NextWS](https://github.com/apteryxxyz/next-ws)
+- [Socket.IO](https://socket.io/)
 - [Tailwind CSS](https://tailwindcss.com/)
 - [Tailwind Variants](https://tailwind-variants.org)
 - [TypeScript](https://www.typescriptlang.org/)
