@@ -191,7 +191,7 @@ export default function InnerChatPage() {
                   e.key === "Enter" && handleSend()
                 }
               />
-              <Button className="ml-2" onClick={handleSend}>
+              <Button color="primary" className="ml-2" onClick={handleSend}>
                 Send
               </Button>
             </div>
